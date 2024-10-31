@@ -1,0 +1,8 @@
+# IDE
+.idea/
+
+# local env files
+.env
+
+# misc
+.DS_Store
