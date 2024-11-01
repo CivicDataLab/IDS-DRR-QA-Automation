@@ -14,10 +14,13 @@ def load_driver():
     load_dotenv()
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
-    options.add_argument('--headless')  # Remove this for debugging
+    
     if os.getenv('LOCAL') == 'false':
+        options.add_argument('--headless')  
         driver = webdriver.Remote(os.getenv('REMOTE_LINK'), options=options)
     else:
+        options.add_argument("start-maximized")
+        options.add_experimental_option("detach", True)
         driver = webdriver.Chrome(options=options)
     return driver
 
