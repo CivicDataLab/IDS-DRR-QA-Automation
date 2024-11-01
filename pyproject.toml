@@ -1,0 +1,12 @@
+[project]
+name = "ids-drr-automation"
+version = "0.0.1"
+description = "Selenium-based Python project designed to automate testing for the Intelligent Data Solution for Disaster Risk Reduction (IDS-DRR) platform"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "selenium>=4.26.0",
+    "python-dotenv==1.0.0",
+    "pdfkit>=1.0.0",
+    "requests>=2.32.3",
+]
