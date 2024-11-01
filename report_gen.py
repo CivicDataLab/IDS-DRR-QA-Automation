@@ -1,6 +1,6 @@
 import pdfkit
 from datetime import datetime
-
+import os
 
 def pdf_gen(data):
     # Prepare HTML content for the report
@@ -78,6 +78,10 @@ def pdf_gen(data):
     </body>
     </html>
     """
+    
+    # Create 'reports' directory if it doesn't exist
+    os.makedirs('reports', exist_ok=True)
 
-    # Generate PDF from the HTML content
-    pdfkit.from_string(html_content, 'comprehensive_report.pdf')
+    # Generate PDF from the HTML content and save it in the 'reports' folder
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    pdfkit.from_string(html_content, f'reports/comprehensive_report_{timestamp_str}.pdf')
