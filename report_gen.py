@@ -17,6 +17,7 @@ def pdf_gen(data):
                 font-family: Arial, sans-serif;
                 margin: 20px;
                 color: #333;
+                background-color: white;
             }}
             h1 {{
                 color: #4CAF50;
