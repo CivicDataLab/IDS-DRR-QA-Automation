@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import os
 from dotenv import load_dotenv
-
+import time
 
 load_dotenv()
 options = webdriver.ChromeOptions()
@@ -20,7 +20,7 @@ driver = webdriver.Chrome(options=options)
 home_url = f"https://{os.getenv('HOME_URL_USERNAME')}:{os.getenv('HOME_URL_PASSWORD')}@{os.getenv('HOME_URL_4')}"
 driver.get(home_url)
 
-def check_component_visibility(selector, selector_type=By.XPATH, timeout=10):
+def check_component_visibility(component_name, selector, selector_type=By.XPATH, timeout=10):
     try:
 
         # Wait for the element to be visible
@@ -32,30 +32,66 @@ def check_component_visibility(selector, selector_type=By.XPATH, timeout=10):
         is_visible = element.is_displayed()
 
         if is_visible:
-            print(f"✅ Component '{selector}' is visible on the page")
+            print(f"✅ Component '{component_name}' is visible on the page")
         else:
-            print(f"❌ Component '{selector}' is not visible on the page")
+            print(f"❌ Component '{component_name}' is not visible on the page")
 
         return is_visible
 
     except TimeoutException:
-        print(f"❌ Component '{selector}' not found within {timeout} seconds")
+        print(f"❌ Component '{component_name}' not found within {timeout} seconds")
         return False
     except NoSuchElementException:
-        print(f"❌ Component '{selector}' not found on the page")
+        print(f"❌ Component '{component_name}' not found on the page")
         return False
     except Exception as e:
         print(f"❌ Error checking component visibility: {e}")
         return False
-    finally:
+    # finally:
         # Always close the browser
-        driver.quit()
+        # driver.quit()
 
 
 if __name__ == "__main__":
 
-    # Example 1: Check if Main top left logo is visible using XPath
+    #Check if Main top left logo in header is visible using XPath
     check_component_visibility(
+        component_name = 'logo',
         selector="//img[@alt='IDS-DRR Logo']",
         selector_type=By.XPATH
         )
+
+    #Check if Home link in header is visible using XPath
+    check_component_visibility(
+        component_name='Home',
+        selector="/html/body/main/header/div/div[2]/div[1]/a[1]",
+        selector_type=By.XPATH
+        )
+
+    # Check if Analytics link in header is visible using XPath
+    check_component_visibility(
+        component_name='Analytics',
+        selector="/html/body/main/header/div/div[2]/div[1]/a[2]",
+        selector_type=By.XPATH
+    )
+
+    # Check if Datasets link in header is visible using XPath
+    check_component_visibility(
+        component_name='Datasets',
+        selector="/html/body/main/header/div/div[2]/div[1]/a[3]",
+        selector_type=By.XPATH
+    )
+
+    # Check if About Us link in header is visible using XPath
+    check_component_visibility(
+        component_name='About Us',
+        selector="/html/body/main/header/div/div[2]/div[1]/a[4]",
+        selector_type=By.XPATH
+    )
+    # # Check if Language Dropdown in header is visible using XPath
+    # check_component_visibility(
+    #     component_name='About Us',
+    #     selector="Select-module_Select__YceVe",
+    #     selector_type=By.CLASS_NAME
+    # )
+
