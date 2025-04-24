@@ -1,4 +1,5 @@
-import my_lib
+import time
+
 def test_dropdown_with_values(driver, locator_type, locator_value, values_to_test,
                               screenshot_prefix=None, wait_before=1, wait_after=3,
                               description="Dropdown"):
@@ -26,7 +27,7 @@ def test_dropdown_with_values(driver, locator_type, locator_value, values_to_tes
         # Test each value
         for value in values_to_test:
             try:
-                my_lib.time.sleep(wait_before)
+                time.sleep(wait_before)
 
                 # Set the value using JavaScript
                 driver.execute_script(f"arguments[0].value='{value}';", dropdown_element)
