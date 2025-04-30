@@ -1,3 +1,5 @@
+import time
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,10 +8,12 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
-options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+# options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
 
 def check_component_visibility(component_name, selector, selector_type=By.XPATH, timeout=10):
+    driver.get("https://drr.open-contracting.in/")
+    time.sleep(2)
     try:
 
         # Wait for the element to be visible
@@ -19,6 +23,8 @@ def check_component_visibility(component_name, selector, selector_type=By.XPATH,
 
         # Check if the element is displayed
         is_visible = element.is_displayed()
+
+
 
         if is_visible:
             print(f"✅ Component '{component_name}' is visible on the page")
