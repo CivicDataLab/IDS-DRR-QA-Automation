@@ -6,7 +6,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
 def check_component_visibility(driver, component_name, selector, selector_type=By.XPATH, timeout=10):
-    time.sleep(2)
+    # time.sleep(2)
     try:
 
         # Wait for the element to be visible
