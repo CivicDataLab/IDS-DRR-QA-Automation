@@ -1,9 +1,7 @@
-import time
-
 from selenium.webdriver.common.by import By
 from component_visibility_func import check_component_visibility
 
-def component_visibility_test(driver):
+def homepage_component_visibility_test(driver):
     # Check if Main top left logo in header is visible using XPath
     check_component_visibility(
         driver,
@@ -95,10 +93,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
     # Check for visibility of dataset catalogs heading and subheadings.
 
     # Find all elements with a same class
@@ -110,10 +104,6 @@ def component_visibility_test(driver):
             selector="/html/body/main/main/div/section[3]/div[1]",
             selector_type=By.XPATH
         )
-
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
 
     # Check for visibility of dataset catalogs links.
 
@@ -127,10 +117,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
     # Check for visibility of Resources heading and subheading using Xpath.
 
     # Find all elements with a same class
@@ -142,10 +128,6 @@ def component_visibility_test(driver):
             selector="/html/body/main/main/div/section[4]/div[1]",
             selector_type=By.XPATH
         )
-
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
 
     # Check for visibility of Resources cards and metadata using Xpath.
 
@@ -159,10 +141,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
     # Check for visibility of DataStories using Xpath.
 
     # Find all elements with a same class
@@ -175,10 +153,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
     # Check for visibility of DataStories cards using Xpath.
 
     # Find all elements with a same class
@@ -190,10 +164,6 @@ def component_visibility_test(driver):
             selector="/html/body/main/main/div/div/section/div[2]/div",
             selector_type=By.XPATH
         )
-
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
 
     # Check for visibility of About IDS-DRR using Xpath.
 
@@ -214,10 +184,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
 
     # Check for visibility of Supporters Section using Xpath.
 
@@ -233,9 +199,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
 
     # checking the funder's logos
     check_component_visibility(
@@ -263,10 +226,6 @@ def component_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
-
     # checking the Partner's logos
     check_component_visibility(
         driver,
@@ -291,10 +250,6 @@ def component_visibility_test(driver):
             selector="/html/body/main/footer",
             selector_type=By.XPATH
         )
-
-        # Optional: Get additional information about the element
-        text = element.text
-        print(f" Text: {text}")
 
     # checking the Footer logos
     check_component_visibility(
@@ -321,6 +276,5 @@ def component_visibility_test(driver):
         selector="/html/body/main/footer/div[1]/div/img[2]",
         selector_type=By.XPATH
     )
-
 
     return driver
