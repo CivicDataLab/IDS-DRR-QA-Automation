@@ -1,4 +1,4 @@
-import time
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -6,7 +6,6 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
 def check_component_visibility(driver, component_name, selector, selector_type=By.XPATH, timeout=10):
-    # time.sleep(2)
     try:
 
         # Wait for the element to be visible
@@ -16,11 +15,11 @@ def check_component_visibility(driver, component_name, selector, selector_type=B
 
         # Check if the element is displayed
         is_visible = element.is_displayed()
-
-
-
         if is_visible:
             print(f"✅ Component '{component_name}' is visible on the page")
+            # Optional: Get additional information about the element
+            text = element.text
+            print(f" Text: {text}")
         else:
             print(f"❌ Component '{component_name}' is not visible on the page")
 
@@ -35,7 +34,4 @@ def check_component_visibility(driver, component_name, selector, selector_type=B
     except Exception as e:
         print(f"❌ Error checking component visibility: {e}")
         return False
-    # finally:
-        # Always close the browser
-        # driver.quit()
 
