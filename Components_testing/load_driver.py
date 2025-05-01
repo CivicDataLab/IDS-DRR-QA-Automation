@@ -4,7 +4,6 @@ from selenium import webdriver
 
 def load_driver():
     global driver, exceptions
-    print("in load driver")
     load_dotenv()
     options = webdriver.ChromeOptions()
     options.add_argument("--window-size=1920,1080")
@@ -15,4 +14,5 @@ def load_driver():
         driver = webdriver.Remote(os.getenv('REMOTE_LINK'), options=options)
     else:
         driver = webdriver.Chrome(options=options)
+        driver.get(os.getenv('URL'))
     return driver

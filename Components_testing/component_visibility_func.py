@@ -1,18 +1,11 @@
 import time
-
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-options = webdriver.ChromeOptions()
-driver = webdriver.Chrome(options=options)
-# options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 
-
-def check_component_visibility(component_name, selector, selector_type=By.XPATH, timeout=10):
-    driver.get("https://drr.open-contracting.in/")
+def check_component_visibility(driver, component_name, selector, selector_type=By.XPATH, timeout=10):
     time.sleep(2)
     try:
 
