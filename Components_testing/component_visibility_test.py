@@ -198,6 +198,13 @@ def component_visibility_test(driver):
     # Check for visibility of About IDS-DRR using Xpath.
 
     # Find all elements with a same class
+    # check for IDS-DRR about section image visibility
+    check_component_visibility(
+        driver,
+        component_name='About IDS-DRR Image',
+        selector="/html/body/main/main/div/section[5]/div/img",
+        selector_type=By.XPATH
+    )
     about_section = driver.find_elements(By.XPATH, "/html/body/main/main/div/section[5]/div")
     for index, element in enumerate(about_section):
         check_component_visibility(
@@ -210,6 +217,7 @@ def component_visibility_test(driver):
         # Optional: Get additional information about the element
         text = element.text
         print(f" Text: {text}")
+
 
     # Check for visibility of Supporters Section using Xpath.
 
@@ -272,4 +280,47 @@ def component_visibility_test(driver):
         selector="/html/body/main/main/div/section[6]/div/div[2]/div/img[2]",
         selector_type=By.XPATH
     )
+    # Check for visibility of Footer section using Xpath.
+
+    # Find all elements with a same class
+    footer_section = driver.find_elements(By.XPATH, "/html/body/main/footer")
+    for index, element in enumerate(footer_section):
+        check_component_visibility(
+            driver,
+            component_name='Footer Section',
+            selector="/html/body/main/footer",
+            selector_type=By.XPATH
+        )
+
+        # Optional: Get additional information about the element
+        text = element.text
+        print(f" Text: {text}")
+
+    # checking the Footer logos
+    check_component_visibility(
+        driver,
+        component_name='IDS-DRR logo',
+        selector="/html/body/main/footer/div[1]/img[1]",
+        selector_type=By.XPATH
+    )
+    check_component_visibility(
+        driver,
+        component_name='Divider image',
+        selector="/html/body/main/footer/div[1]/img[2]",
+        selector_type=By.XPATH
+    )
+    check_component_visibility(
+        driver,
+        component_name='CDL Logo',
+        selector="/html/body/main/footer/div[1]/div/img[1]",
+        selector_type=By.XPATH
+    )
+    check_component_visibility(
+        driver,
+        component_name='OCP Logo',
+        selector="/html/body/main/footer/div[1]/div/img[2]",
+        selector_type=By.XPATH
+    )
+
+
     return driver
