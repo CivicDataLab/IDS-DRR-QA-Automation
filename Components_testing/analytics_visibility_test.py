@@ -327,7 +327,7 @@ def analytics_visibility_test(driver):
         selector_type=By.XPATH
     )
 
-    # Check for visibility of the Chart View Select District Options using XPath
+    # Check for visibility of the Table View Select District Options using XPath
 
     # Find all elements with a same class
     select_district_section = driver.find_element(By.XPATH, "/html/body/main/div/main/div/div[3]/div/div[1]/div/div/div[1]/div[2]/select")
@@ -351,7 +351,7 @@ def analytics_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-    # Check for visibility of the Chart View Select Revenue Circle Options using XPath
+    # Check for visibility of the Table View Select Revenue Circle Options using XPath
 
     # Find all elements with a same class
     select_revenue_section = driver.find_elements(By.XPATH, "//*[contains(@id, 'content-table')]/div/div[1]/div/div[2]")
@@ -363,7 +363,7 @@ def analytics_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-    # Check for visibility of the Chart View Select Month Options using XPath
+    # Check for visibility of the Table View Select Month Options using XPath
 
     # Find all elements with a same class
     select_month_section = driver.find_elements(By.XPATH, "//*[contains(@id, 'content-table')]/div/div[1]/div/div/div[3]")
