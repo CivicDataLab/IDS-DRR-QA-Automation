@@ -38,7 +38,7 @@ def analytics_visibility_test(driver):
         selector_type=By.XPATH
     )
 
-    # Check if the State Selection dropdown is visible using XPath
+    # Check if the Indicators are visible using XPath
     check_component_visibility(
         driver,
         component_name='Indicators',
@@ -46,7 +46,6 @@ def analytics_visibility_test(driver):
         selector_type=By.XPATH
     )
 
-    # Check for visibility of the Indicators on left menu.
     time.sleep(2)
 
     # Check for visibility of the Indicators on left menu.
