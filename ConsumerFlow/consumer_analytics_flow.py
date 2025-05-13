@@ -16,9 +16,8 @@ revenue_circle_select = ""
 calendar = ""
 
 def consumer_analytics_flow_test(driver):
-
-    # Create the directory if it doesn't exist
     global ss_prefix, district_select, revenue_circle_select, calendar
+    # Create the directory if it doesn't exist
     os.makedirs(screenshot_dir, exist_ok=True)
     # moving to analytics page from homepage
     try:
@@ -31,7 +30,7 @@ def consumer_analytics_flow_test(driver):
         print("❌ Analytics button not found")
         return
     # iterating for map, chart and table view
-    for index in range(2, 4):
+    for index in range(1, 4):
         time.sleep(3)
         xpath = f"/html/body/main/div/main/div/div[1]/button[{index}]/span"
         WebDriverWait(driver, 20).until(
