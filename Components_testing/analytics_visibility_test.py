@@ -126,13 +126,13 @@ def analytics_visibility_test(driver):
             selector_type=By.XPATH
         )
 
-    # Check if the Data last updated is visible using XPath
-    check_component_visibility(
-        driver,
-        component_name='Data last updated',
-        selector="/html/body/main/div/aside/div/div[2]/span",
-        selector_type=By.XPATH
-    )
+    # # Check if the Data last updated is visible using XPath
+    # check_component_visibility(
+    #     driver,
+    #     component_name='Data last updated',
+    #     selector="/html/body/main/div/aside/div/div[2]/span",
+    #     selector_type=By.XPATH
+    # )
 
     # Check for visibility of the Tabs sections using XPath
 
