@@ -4,5 +4,11 @@
 # local env files
 .env
 
+# local files
+/debug.py
+/debug_dropdown.py
+/debug_main.py
+/report.pdf
+
 # misc
 .DS_Store
