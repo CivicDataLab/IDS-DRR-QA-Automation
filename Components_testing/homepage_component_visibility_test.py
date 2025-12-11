@@ -204,13 +204,13 @@ def homepage_component_visibility_test(driver):
     check_component_visibility(
         driver,
         component_name='The Rockefeller foundation logo',
-        selector="/html/body/main/main/div/section[6]/div/div[1]/div/img[1]",
+        selector="/html/body/main/main/div/section[6]/div/div[1]/div/div[1]/div[1]/img",
         selector_type=By.XPATH
     )
     check_component_visibility(
         driver,
         component_name='The PJMF logo',
-        selector="/html/body/main/main/div/section[6]/div/div[1]/div/img[2]",
+        selector="/html/body/main/main/div/section[6]/div/div[1]/div/div[2]/div[1]/img",
         selector_type=By.XPATH
     )
 
@@ -230,13 +230,13 @@ def homepage_component_visibility_test(driver):
     check_component_visibility(
         driver,
         component_name='ASDMA logo',
-        selector="/html/body/main/main/div/section[6]/div/div[2]/div/img[1]",
+        selector="/html/body/main/main/div/section[6]/div/div[2]/div/div[1]/div[1]/img",
         selector_type=By.XPATH
     )
     check_component_visibility(
         driver,
         component_name='HPSDMA logo',
-        selector="/html/body/main/main/div/section[6]/div/div[2]/div/img[2]",
+        selector="/html/body/main/main/div/section[6]/div/div[2]/div/div[2]/div[1]/img",
         selector_type=By.XPATH
     )
     # Check for visibility of Footer section using Xpath.
