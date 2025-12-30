@@ -7,6 +7,7 @@ on:
       - develop
       - master
       - 'dev/**'
+      - 'feature/**'
   pull_request:
   deployment:
   workflow_dispatch:
