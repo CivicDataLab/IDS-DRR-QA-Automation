@@ -76,93 +76,93 @@ class StateIndicatorDiscovery:
 
     def get_available_states(self):
         """
-        Discover available states from the dropdown in the sidebar
+        Discover available states from the <select> dropdown
 
         Returns:
             list: Available state names
         """
         try:
-            # Look for the state dropdown/list in the sidebar
-            # The states appear as list items (li) in a collapsible section
+            # Find the state select dropdown
+            # It's a <select name="State"> element with <option> children
 
-            # First, try to find and click the states section to expand it
-            try:
-                # Look for "Assam" text which indicates the dropdown section
-                states_section_xpath = "//div[contains(@class, 'analytics') or contains(@role, 'navigation')]//li[contains(text(), 'Assam')]"
+            # Find the select element
+            select_element = self.driver.find_element(By.NAME, "State")
 
-                # Get all list items that might be states
-                state_items = self.driver.find_elements(
-                    By.XPATH,
-                    "//li[contains(text(), 'Assam') or contains(text(), 'Himachal') or contains(text(), 'Odisha') or contains(text(), 'Bihar') or contains(text(), 'Uttar')]"
-                )
+            # Get all option elements
+            options = select_element.find_elements(By.TAG_NAME, "option")
 
-                if state_items:
-                    states = []
-                    for item in state_items:
-                        text = item.text.strip()
-                        if text and text not in states:
-                            states.append(text)
+            states = []
+            for option in options:
+                state_name = option.text.strip()
+                if state_name:
+                    states.append(state_name)
 
-                    if states:
-                        print(f"✅ Discovered {len(states)} states from UI: {states}")
-                        return states
+            if states:
+                print(f"✅ Discovered {len(states)} states from dropdown: {states}")
+                return states
+            else:
+                print(f"⚠️  No states found in dropdown, using predefined list")
+                return self.STATE_LIST
 
-            except Exception as e:
-                print(f"⚠️  Could not find state list items: {e}")
-
-            # Fallback to predefined list
-            print(f"ℹ️  Using predefined state list: {self.STATE_LIST}")
+        except NoSuchElementException:
+            print(f"⚠️  State dropdown not found, using predefined list")
             return self.STATE_LIST
-
         except Exception as e:
             print(f"⚠️  Error discovering states: {e}")
             return self.STATE_LIST
 
     def select_state(self, state_name):
         """
-        Select a state from the sidebar dropdown
+        Select a state from the <select> dropdown
 
         Args:
-            state_name: Name of the state to select
+            state_name: Name of the state to select (e.g., "Assam", "Himachal pradesh")
 
         Returns:
             bool: Success status
         """
+        from selenium.webdriver.support.ui import Select
+
         try:
             # Navigate to analytics page first to ensure we're on the right page
             if "/analytics" not in self.driver.current_url:
                 self.navigate_to_analytics()
 
-            # Based on the screenshot, states are list items in the left sidebar
-            # Try multiple strategies to find and click the state
+            # Find the state select dropdown
+            select_element = self.wait.until(
+                EC.presence_of_element_located((By.NAME, "State"))
+            )
 
-            # Strategy 1: Exact text match (case-insensitive)
-            state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
+            # Create Select object
+            select = Select(select_element)
 
+            # Select by visible text (case-sensitive match)
             try:
-                state_element = self.wait.until(
-                    EC.presence_of_element_located((By.XPATH, state_xpath))
-                )
-
-                # Scroll element into view
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
-                time.sleep(0.5)
-
-                # Try to click
-                try:
-                    state_element.click()
-                except:
-                    # If regular click fails, try JavaScript click
-                    self.driver.execute_script("arguments[0].click();", state_element)
-
-                time.sleep(2)  # Wait for state change and page reload
+                select.select_by_visible_text(state_name)
                 print(f"✅ Selected state: {state_name}")
-                return True
+            except NoSuchElementException:
+                # Try case-insensitive match
+                print(f"⚠️  Exact match failed, trying case-insensitive match...")
+                options = select.options
+                for option in options:
+                    if option.text.strip().lower() == state_name.lower():
+                        select.select_by_visible_text(option.text.strip())
+                        print(f"✅ Selected state: {option.text.strip()}")
+                        break
+                else:
+                    raise NoSuchElementException(f"Could not find state: {state_name}")
 
-            except TimeoutException:
-                print(f"❌ Could not find state element for: {state_name}")
-                return False
+            # Wait for page to update after state selection
+            time.sleep(2)
+            return True
 
+        except TimeoutException:
+            print(f"❌ State dropdown not found")
+            return False
+        except NoSuchElementException as e:
+            print(f"❌ Could not find state option: {state_name}")
+            print(f"   Error: {e}")
+            return False
         except Exception as e:
             print(f"❌ Failed to select state {state_name}: {e}")
             import traceback
