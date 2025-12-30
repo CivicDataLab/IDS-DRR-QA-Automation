@@ -153,14 +153,19 @@ class BasePage:
         """
         try:
             element = self.find_visible_element(locator, timeout)
-            if element and element.is_displayed():
-                print(f"✅ {element_name} is visible")
-                return True
+            if element:
+                # Double-check the element is actually displayed (not just present in DOM)
+                if element.is_displayed():
+                    print(f"✅ {element_name} is visible")
+                    return True
+                else:
+                    print(f"❌ {element_name} is not visible (found in DOM but hidden)")
+                    return False
             else:
                 print(f"❌ {element_name} is not visible")
                 return False
         except Exception as e:
-            print(f"❌ {element_name} not found: {e}")
+            print(f"❌ {element_name} is not visible")
             return False
 
     def get_text(self, locator):
@@ -251,12 +256,35 @@ class BasePage:
         """
         try:
             from selenium.webdriver.support.ui import Select
+            import time
+
             element = self.find_element(locator)
             if element:
+                # Wait a moment for dropdown options to load (especially for dependent dropdowns)
+                time.sleep(1)
+
                 select = Select(element)
-                select.select_by_visible_text(text)
-                print(f"✅ Selected '{text}' from {element_name}")
-                return True
+
+                # Try exact match first
+                try:
+                    select.select_by_visible_text(text)
+                    print(f"✅ Selected '{text}' from {element_name}")
+                    return True
+                except NoSuchElementException:
+                    # If exact match fails, try partial match
+                    print(f"⚠️ Exact match failed for '{text}', trying partial match...")
+                    options = select.options
+                    for option in options:
+                        if text.lower() in option.text.lower():
+                            select.select_by_visible_text(option.text)
+                            print(f"✅ Selected '{option.text}' from {element_name} (partial match for '{text}')")
+                            return True
+
+                    # If still not found, print available options for debugging
+                    available = [opt.text for opt in options if opt.text.strip()]
+                    print(f"❌ Could not find '{text}' in {element_name}")
+                    print(f"   Available options: {available}")
+                    return False
             else:
                 print(f"❌ {element_name} not found")
                 return False

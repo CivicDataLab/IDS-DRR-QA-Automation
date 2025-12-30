@@ -348,6 +348,181 @@ class TestAnalyticsCompleteFlow:
 
 
 @pytest.mark.analytics
+@pytest.mark.map
+class TestHazardMapValidation:
+    """Map-based testing for all Hazard indicators"""
+
+    @pytest.mark.parametrize("option", ["monthly_rainfall", "inundation", "elevation"])
+    def test_hazard_indicator_map_loads(self, driver, option):
+        """Validate map loads for all hazard indicators with district selection"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate and setup
+        assert common_page.navigate_to_analytics(), "❌ Failed to navigate to Analytics page"
+        assert analytics_page.select_view(1), "❌ Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        # Expand hazard and select option
+        assert analytics_page.expand_hazard_options(), "❌ Failed to expand hazard options"
+        assert analytics_page.select_hazard_option(option), f"❌ Failed to select {option}"
+
+        # Validate map loads
+        wait = WebDriverWait(driver, 5)
+        map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+        assert map_element is not None, f"❌ Map did not load for {option}"
+        print(f"✅ Map loaded successfully for hazard indicator: {option}")
+
+        # Take screenshot for visual validation
+        analytics_page.take_analytics_screenshot(f"hazard_map_{option}_", "validated")
+
+
+@pytest.mark.analytics
+@pytest.mark.map
+class TestExposureMapValidation:
+    """Map-based testing for all Exposure indicators"""
+
+    @pytest.mark.parametrize("option", ["households", "population", "elderly", "children"])
+    def test_exposure_indicator_map_loads(self, driver, option):
+        """Validate map loads for all exposure indicators with district selection"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate and setup
+        assert common_page.navigate_to_analytics(), "❌ Failed to navigate to Analytics page"
+        assert analytics_page.select_view(1), "❌ Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        # Expand exposure and select option
+        assert analytics_page.expand_exposure_options(), "❌ Failed to expand exposure options"
+        assert analytics_page.select_exposure_option(option), f"❌ Failed to select {option}"
+
+        # Validate map loads
+        wait = WebDriverWait(driver, 5)
+        map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+        assert map_element is not None, f"❌ Map did not load for {option}"
+        print(f"✅ Map loaded successfully for exposure indicator: {option}")
+
+        # Take screenshot for visual validation
+        analytics_page.take_analytics_screenshot(f"exposure_map_{option}_", "validated")
+
+
+@pytest.mark.analytics
+@pytest.mark.map
+class TestVulnerabilityMapValidation:
+    """Map-based testing for all Vulnerability indicators"""
+
+    @pytest.mark.parametrize("option", [
+        "health_centres", "electricity", "water", "sanitation", "schools",
+        "rail", "road", "sown_area", "sex_ratio"
+    ])
+    def test_vulnerability_infrastructure_map_loads(self, driver, option):
+        """Validate map loads for vulnerability infrastructure indicators"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate and setup
+        assert common_page.navigate_to_analytics(), "❌ Failed to navigate to Analytics page"
+        assert analytics_page.select_view(1), "❌ Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        # Expand vulnerability and select option
+        assert analytics_page.expand_vulnerability_options(), "❌ Failed to expand vulnerability options"
+        assert analytics_page.select_vulnerability_option(option), f"❌ Failed to select {option}"
+
+        # Validate map loads
+        wait = WebDriverWait(driver, 5)
+        map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+        assert map_element is not None, f"❌ Map did not load for {option}"
+        print(f"✅ Map loaded successfully for vulnerability indicator: {option}")
+
+        # Take screenshot for visual validation
+        analytics_page.take_analytics_screenshot(f"vulnerability_map_{option}_", "validated")
+
+    @pytest.mark.parametrize("option", [
+        "population_affected", "lives_lost", "crop_affected",
+        "embankments_affected", "roads_damaged", "bridges_damaged", "embankments_breached"
+    ])
+    def test_vulnerability_impact_map_loads(self, driver, option):
+        """Validate map loads for vulnerability impact indicators"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate and setup
+        assert common_page.navigate_to_analytics(), "❌ Failed to navigate to Analytics page"
+        assert analytics_page.select_view(1), "❌ Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        # Expand vulnerability and select option
+        assert analytics_page.expand_vulnerability_options(), "❌ Failed to expand vulnerability options"
+        assert analytics_page.select_vulnerability_option(option), f"❌ Failed to select {option}"
+
+        # Validate map loads
+        wait = WebDriverWait(driver, 5)
+        map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+        assert map_element is not None, f"❌ Map did not load for {option}"
+        print(f"✅ Map loaded successfully for vulnerability indicator: {option}")
+
+        # Take screenshot for visual validation
+        analytics_page.take_analytics_screenshot(f"vulnerability_map_{option}_", "validated")
+
+
+@pytest.mark.analytics
+@pytest.mark.map
+class TestGovernmentResponseMapValidation:
+    """Map-based testing for all Government Response indicators"""
+
+    @pytest.mark.parametrize("option", ["flood_tenders", "sdrf", "repairs", "immediate", "others", "funds"])
+    def test_govt_response_indicator_map_loads(self, driver, option):
+        """Validate map loads for all government response indicators with district selection"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate and setup
+        assert common_page.navigate_to_analytics(), "❌ Failed to navigate to Analytics page"
+        assert analytics_page.select_view(1), "❌ Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        # Expand government response and select option
+        assert analytics_page.expand_govt_response_options(), "❌ Failed to expand govt response options"
+        assert analytics_page.select_govt_response_option(option), f"❌ Failed to select {option}"
+
+        # Validate map loads
+        wait = WebDriverWait(driver, 5)
+        map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+        assert map_element is not None, f"❌ Map did not load for {option}"
+        print(f"✅ Map loaded successfully for government response indicator: {option}")
+
+        # Take screenshot for visual validation
+        analytics_page.take_analytics_screenshot(f"govt_response_map_{option}_", "validated")
+
+
+@pytest.mark.analytics
 @pytest.mark.edge_case
 class TestAnalyticsEdgeCases:
     """Edge cases and boundary condition tests"""

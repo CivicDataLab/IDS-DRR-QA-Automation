@@ -24,8 +24,13 @@ class AnalyticsPage(BasePage):
             view_index: View index (1, 2, or 3)
 
         Returns:
-            bool: Success status
+            bool: Success status (False if invalid index)
         """
+        # Validate view_index
+        if view_index not in [1, 2, 3]:
+            print(f"❌ Invalid view index: {view_index}. Must be 1, 2, or 3")
+            return False
+
         locator = AnalyticsPageLocators.get_view_button(view_index)
         view_names = {1: "Map View", 2: "Chart View", 3: "Table View"}
         return self.click(locator, view_names.get(view_index, f"View {view_index}"))
@@ -94,7 +99,25 @@ class AnalyticsPage(BasePage):
 
     def collapse_hazard_options(self):
         """Collapse Hazard options section"""
-        return self.click(HazardLocators.EXPAND_COLLAPSE, "Collapse Hazard Options")
+        import time
+        # Add a small wait before attempting to collapse
+        time.sleep(0.5)
+
+        # Check if section is already collapsed by looking for expanded state
+        try:
+            element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
+            if element:
+                # Check if the section is expanded before trying to collapse
+                aria_expanded = element.get_attribute('aria-expanded')
+                if aria_expanded == 'false':
+                    print("✅ Hazard Options already collapsed")
+                    return True
+
+            # If expanded or can't determine, try to collapse
+            return self.click(HazardLocators.EXPAND_COLLAPSE, "Collapse Hazard Options")
+        except Exception as e:
+            print(f"❌ Error in collapse_hazard_options: {e}")
+            return False
 
     def select_hazard_option(self, option_name, screenshot_prefix=None):
         """
@@ -134,7 +157,23 @@ class AnalyticsPage(BasePage):
 
     def collapse_exposure_options(self):
         """Collapse Exposure options section"""
-        return self.click(ExposureLocators.EXPAND_COLLAPSE, "Collapse Exposure Options")
+        import time
+        # Add a small wait before attempting to collapse
+        time.sleep(0.5)
+
+        # Check if section is already collapsed
+        try:
+            element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
+            if element:
+                aria_expanded = element.get_attribute('aria-expanded')
+                if aria_expanded == 'false':
+                    print("✅ Exposure Options already collapsed")
+                    return True
+
+            return self.click(ExposureLocators.EXPAND_COLLAPSE, "Collapse Exposure Options")
+        except Exception as e:
+            print(f"❌ Error in collapse_exposure_options: {e}")
+            return False
 
     def select_exposure_option(self, option_name, screenshot_prefix=None):
         """
@@ -175,7 +214,23 @@ class AnalyticsPage(BasePage):
 
     def collapse_vulnerability_options(self):
         """Collapse Vulnerability options section"""
-        return self.click(VulnerabilityLocators.EXPAND_COLLAPSE, "Collapse Vulnerability Options")
+        import time
+        # Add a small wait before attempting to collapse
+        time.sleep(0.5)
+
+        # Check if section is already collapsed
+        try:
+            element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
+            if element:
+                aria_expanded = element.get_attribute('aria-expanded')
+                if aria_expanded == 'false':
+                    print("✅ Vulnerability Options already collapsed")
+                    return True
+
+            return self.click(VulnerabilityLocators.EXPAND_COLLAPSE, "Collapse Vulnerability Options")
+        except Exception as e:
+            print(f"❌ Error in collapse_vulnerability_options: {e}")
+            return False
 
     def select_vulnerability_option(self, option_name, screenshot_prefix=None):
         """Select a vulnerability option"""
@@ -222,8 +277,24 @@ class AnalyticsPage(BasePage):
 
     def collapse_govt_response_options(self):
         """Collapse Government Response options section"""
+        import time
         self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
-        return self.click(GovtResponseLocators.EXPAND_COLLAPSE, "Collapse Government Response Options")
+        # Add a small wait before attempting to collapse
+        time.sleep(0.5)
+
+        # Check if section is already collapsed
+        try:
+            element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
+            if element:
+                aria_expanded = element.get_attribute('aria-expanded')
+                if aria_expanded == 'false':
+                    print("✅ Government Response Options already collapsed")
+                    return True
+
+            return self.click(GovtResponseLocators.EXPAND_COLLAPSE, "Collapse Government Response Options")
+        except Exception as e:
+            print(f"❌ Error in collapse_govt_response_options: {e}")
+            return False
 
     def select_govt_response_option(self, option_name, screenshot_prefix=None):
         """Select a government response option"""

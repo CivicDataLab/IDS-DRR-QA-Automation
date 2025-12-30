@@ -60,6 +60,9 @@ class SelfHealingPlugin:
             f"self_healing_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
 
+        # Ensure directory exists before writing
+        os.makedirs(self.report_dir, exist_ok=True)
+
         report_data = {
             "generated_at": datetime.now().isoformat(),
             "summary": {

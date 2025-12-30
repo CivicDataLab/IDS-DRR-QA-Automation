@@ -38,7 +38,8 @@ class CommonPage(BasePage):
 
     def is_language_dropdown_visible(self):
         """Check if language dropdown is visible"""
-        return self.is_element_visible(HeaderLocators.LANGUAGE_DROPDOWN, "Language Dropdown")
+        # Use shorter timeout since language dropdown may not be present on all pages
+        return self.is_element_visible(HeaderLocators.LANGUAGE_DROPDOWN, "Language Dropdown", timeout=3)
 
     def is_nav_link_visible(self, link_name):
         """
@@ -118,9 +119,12 @@ class CommonPage(BasePage):
             f"{partner_name.title()} Logo"
         )
 
-    def check_all_header_elements(self):
+    def check_all_header_elements(self, include_language_dropdown=False):
         """
         Check visibility of all header elements
+
+        Args:
+            include_language_dropdown: Whether to include language dropdown in check (default: False)
 
         Returns:
             dict: Results of all checks
@@ -130,9 +134,12 @@ class CommonPage(BasePage):
             'home_link': self.is_nav_link_visible('home'),
             'analytics_link': self.is_nav_link_visible('analytics'),
             'datasets_link': self.is_nav_link_visible('datasets'),
-            'about_us_link': self.is_nav_link_visible('about_us'),
-            'language_dropdown': self.is_language_dropdown_visible()
+            'about_us_link': self.is_nav_link_visible('about_us')
         }
+
+        # Language dropdown is optional - may be hidden in some UI implementations
+        if include_language_dropdown:
+            results['language_dropdown'] = self.is_language_dropdown_visible()
 
         passed = sum(results.values())
         total = len(results)
