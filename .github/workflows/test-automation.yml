@@ -2,7 +2,11 @@ name: QA Test Automation
 
 on:
   push:
-    branches: [main, develop, master]
+    branches:
+      - main
+      - develop
+      - master
+      - 'dev/**'
   pull_request:
   deployment:
   workflow_dispatch:
