@@ -60,8 +60,24 @@ jobs:
 
       - name: Run tests
         env:
+          # Application URLs
+          URL: ${{ secrets.URL }}
+          HOME_URL_4: ${{ secrets.HOME_URL_4 }}
+          MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
+
+          # Authentication
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+
+          # Browser Settings
           HEADLESS: true
           BROWSER: chrome
+          LOCAL: true
+
+          # Timeout Settings (optimized for CI)
+          DEFAULT_TIMEOUT: 10
+          SHORT_TIMEOUT: 5
+          LONG_TIMEOUT: 15
         run: |
           mkdir -p reports/self_healing
 
@@ -159,8 +175,24 @@ jobs:
 
       - name: Run smoke tests
         env:
+          # Application URLs
+          URL: ${{ secrets.URL }}
+          HOME_URL_4: ${{ secrets.HOME_URL_4 }}
+          MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
+
+          # Authentication
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+
+          # Browser Settings
           HEADLESS: true
           BROWSER: chrome
+          LOCAL: true
+
+          # Timeout Settings
+          DEFAULT_TIMEOUT: 10
+          SHORT_TIMEOUT: 5
+          LONG_TIMEOUT: 15
         run: |
           pytest tests/ -n 4 -m smoke --html=reports/smoke_report.html --self-contained-html || true
 
