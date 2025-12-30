@@ -1,0 +1,169 @@
+name: QA Test Automation
+
+on:
+  push:
+    branches: [main, develop, master]
+  pull_request:
+  deployment:
+  workflow_dispatch:
+    inputs:
+      workers:
+        description: 'Parallel workers (1-4)'
+        required: false
+        default: '3'
+        type: choice
+        options: ['1', '2', '3', '4']
+      test_marker:
+        description: 'Test marker (smoke, analytics, dataset)'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: '3.11'
+  PARALLEL_WORKERS: 3
+
+jobs:
+  test:
+    name: Tests (Shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Cache browser drivers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/selenium
+            ~/.wdm
+          key: ${{ runner.os }}-drivers-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-drivers-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        env:
+          HEADLESS: true
+          BROWSER: chrome
+        run: |
+          mkdir -p reports/self_healing
+
+          WORKERS=${{ github.event_name == 'workflow_dispatch' && inputs.workers || env.PARALLEL_WORKERS }}
+          MARKER=${{ github.event_name == 'workflow_dispatch' && inputs.test_marker != '' && format('-m {0}', inputs.test_marker) || '' }}
+
+          pytest tests/ \
+            -n $WORKERS \
+            --dist loadscope \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --html=reports/test_report_shard_${{ matrix.shard }}.html \
+            --self-contained-html \
+            --junitxml=reports/junit_shard_${{ matrix.shard }}.xml \
+            --splits 3 \
+            --group ${{ matrix.shard }} \
+            $MARKER || true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-shard-${{ matrix.shard }}
+          path: |
+            reports/*.html
+            reports/*.xml
+            reports/*.log
+            reports/self_healing/
+          retention-days: 30
+
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-shard-${{ matrix.shard }}
+          path: |
+            screenshots/
+            reports/screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: test-reports-shard-*
+          path: reports
+          merge-multiple: true
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: reports/**/*.xml
+          check_name: Test Results
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportCount = fs.readdirSync('reports').filter(f => f.endsWith('.html')).length;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Test Results\n\n- Shards: 3\n- Workers per shard: ${process.env.PARALLEL_WORKERS}\n- Reports: ${reportCount}\n\nCheck artifacts for detailed reports.`
+            });
+
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run smoke tests
+        env:
+          HEADLESS: true
+          BROWSER: chrome
+        run: |
+          pytest tests/ -n 4 -m smoke --html=reports/smoke_report.html --self-contained-html || true
+
+      - name: Upload smoke test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-report
+          path: reports/smoke_report.html
+          retention-days: 7

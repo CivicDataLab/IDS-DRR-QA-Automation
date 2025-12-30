@@ -1,0 +1,373 @@
+"""
+Analytics Page Tests - Comprehensive test coverage including edge cases and negative tests
+
+Run: pytest tests/test_analytics.py -v
+"""
+
+import pytest
+from pages.common_page import CommonPage
+from pages.analytics_page import AnalyticsPage
+from config.test_data import AnalyticsTestData
+
+
+@pytest.mark.analytics
+@pytest.mark.smoke
+class TestAnalyticsNavigation:
+    """Analytics page navigation and accessibility tests"""
+
+    def test_navigate_to_analytics_from_homepage(self, driver):
+        """Verify analytics page is accessible from homepage"""
+        common_page = CommonPage(driver)
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        print("✅ Analytics navigation successful")
+
+    def test_analytics_page_header_visible(self, driver):
+        """Verify header is visible on analytics page"""
+        common_page = CommonPage(driver)
+        common_page.navigate_to_analytics()
+        assert common_page.is_header_logo_visible(), "Header logo not visible on analytics page"
+
+    def test_analytics_page_footer_visible(self, driver):
+        """Verify footer is visible on analytics page"""
+        common_page = CommonPage(driver)
+        common_page.navigate_to_analytics()
+        footer_results = common_page.check_all_footer_elements()
+        assert all(footer_results.values()), "Some footer elements not visible"
+
+
+@pytest.mark.analytics
+class TestAnalyticsViewToggle:
+    """Tests for Map, Chart, and Table view toggling"""
+
+    @pytest.mark.parametrize("view_index,view_name", [
+        (1, "Map"),
+        (2, "Chart"),
+        (3, "Table")
+    ])
+    def test_select_view(self, driver, view_index, view_name):
+        """Test individual view selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        assert analytics_page.select_view(view_index), f"Failed to select {view_name} view"
+        print(f"✅ {view_name} view selected successfully")
+
+    def test_toggle_between_all_views(self, driver):
+        """Test toggling between all three views"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+
+        # Toggle through all views
+        for view_index in [1, 2, 3, 1]:  # Test cycling
+            assert analytics_page.select_view(view_index), f"Failed to select view {view_index}"
+
+    @pytest.mark.negative
+    def test_invalid_view_index(self, driver):
+        """Negative test: Invalid view index should fail gracefully"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        # This should return False or handle error gracefully
+        result = analytics_page.select_view(99)
+        assert result is False, "Invalid view index should return False"
+
+
+@pytest.mark.analytics
+class TestAnalyticsFilters:
+    """Tests for district, revenue circle, and calendar filters"""
+
+    def test_select_district_dropdown(self, driver):
+        """Test district selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_view(1)
+
+        assert analytics_page.select_district("Sivasagar"), "Failed to select district"
+
+    def test_select_revenue_circle_dropdown(self, driver):
+        """Test revenue circle selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_view(1)
+        analytics_page.select_district("Sivasagar")
+
+        assert analytics_page.select_revenue_circle("Sibsagar"), "Failed to select revenue circle"
+
+    @pytest.mark.parametrize("month", ["1", "6", "7", "12"])
+    def test_select_calendar_months(self, driver, month):
+        """Test calendar month selection - boundary values"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_view(1)
+
+        assert analytics_page.open_calendar(), "Failed to open calendar"
+        assert analytics_page.select_calendar_month(month), f"Failed to select month {month}"
+
+    @pytest.mark.negative
+    def test_select_invalid_month(self, driver):
+        """Negative test: Invalid month selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.open_calendar()
+
+        # Invalid month (13)
+        result = analytics_page.select_calendar_month("13")
+        assert result is False, "Invalid month should return False"
+
+    def test_filter_combination_all_fields(self, driver):
+        """Test selecting all filters in combination"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_view(1)
+
+        # Select all filters
+        assert analytics_page.select_district("Sivasagar"), "District selection failed"
+        assert analytics_page.select_revenue_circle("Sibsagar"), "Revenue circle failed"
+        assert analytics_page.open_calendar(), "Calendar open failed"
+        assert analytics_page.select_calendar_month("7"), "Month selection failed"
+
+        analytics_page.take_analytics_screenshot("filter_", "all_selected")
+
+
+@pytest.mark.analytics
+class TestHazardOptions:
+    """Tests for Hazard section options"""
+
+    def test_expand_hazard_section(self, driver):
+        """Test expanding hazard options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        assert analytics_page.expand_hazard_options(), "Failed to expand hazard options"
+
+    def test_collapse_hazard_section(self, driver):
+        """Test collapsing hazard options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_hazard_options()
+        assert analytics_page.collapse_hazard_options(), "Failed to collapse hazard options"
+
+    @pytest.mark.parametrize("option", ["monthly_rainfall", "inundation", "elevation"])
+    def test_select_hazard_option(self, driver, option):
+        """Test individual hazard option selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_hazard_options()
+        assert analytics_page.select_hazard_option(option), f"Failed to select {option}"
+
+    @pytest.mark.negative
+    def test_invalid_hazard_option(self, driver):
+        """Negative test: Invalid hazard option"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_hazard_options()
+
+        result = analytics_page.select_hazard_option("invalid_option")
+        assert result is False, "Invalid option should return False"
+
+
+@pytest.mark.analytics
+class TestExposureOptions:
+    """Tests for Exposure section options"""
+
+    @pytest.mark.parametrize("option", ["households", "population", "elderly", "children"])
+    def test_select_exposure_option(self, driver, option):
+        """Test individual exposure option selection"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_exposure_options()
+        assert analytics_page.select_exposure_option(option), f"Failed to select {option}"
+
+    def test_all_exposure_options_sequential(self, driver):
+        """Test selecting all exposure options in sequence"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_exposure_options()
+
+        options = ["households", "population", "elderly", "children"]
+        for option in options:
+            assert analytics_page.select_exposure_option(option), f"Failed: {option}"
+
+
+@pytest.mark.analytics
+class TestVulnerabilityOptions:
+    """Tests for Vulnerability section options"""
+
+    @pytest.mark.parametrize("option", [
+        "health_centres", "electricity", "water", "sanitation", "schools",
+        "rail", "road", "sown_area", "sex_ratio"
+    ])
+    def test_vulnerability_infrastructure_options(self, driver, option):
+        """Test infrastructure vulnerability options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_vulnerability_options()
+        assert analytics_page.select_vulnerability_option(option), f"Failed: {option}"
+
+    @pytest.mark.parametrize("option", [
+        "population_affected", "lives_lost", "crop_affected",
+        "embankments_affected", "roads_damaged", "bridges_damaged", "embankments_breached"
+    ])
+    def test_vulnerability_impact_options(self, driver, option):
+        """Test impact vulnerability options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_vulnerability_options()
+        assert analytics_page.select_vulnerability_option(option), f"Failed: {option}"
+
+
+@pytest.mark.analytics
+class TestGovernmentResponse:
+    """Tests for Government Response section"""
+
+    @pytest.mark.parametrize("option", ["flood_tenders", "sdrf", "repairs", "immediate", "others", "funds"])
+    def test_select_govt_response_option(self, driver, option):
+        """Test government response options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_govt_response_options()
+        assert analytics_page.select_govt_response_option(option), f"Failed: {option}"
+
+
+@pytest.mark.analytics
+@pytest.mark.flow
+@pytest.mark.slow
+class TestAnalyticsCompleteFlow:
+    """Complete end-to-end analytics flow test"""
+
+    def test_complete_analytics_workflow(self, driver):
+        """Full analytics workflow with all views and options"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+
+        for view_data in AnalyticsTestData.ALL_VIEWS:
+            print(f"\n=== Testing {view_data['view_type'].upper()} View ===")
+
+            # Select view and filters
+            assert analytics_page.select_view(view_data['view_index'])
+            analytics_page.take_analytics_screenshot(view_data['screenshot_prefix'], "initial")
+
+            assert analytics_page.select_district(view_data['district'])
+            assert analytics_page.select_revenue_circle(view_data['revenue_circle'])
+            assert analytics_page.open_calendar()
+            assert analytics_page.select_calendar_month(view_data['calendar_month'])
+
+            # Test Hazard options
+            assert analytics_page.expand_hazard_options(view_data['screenshot_prefix'])
+            for option in ['monthly_rainfall', 'inundation', 'elevation']:
+                assert analytics_page.select_hazard_option(option, view_data['screenshot_prefix'])
+            assert analytics_page.collapse_hazard_options()
+
+            # Test Exposure options
+            assert analytics_page.expand_exposure_options(view_data['screenshot_prefix'])
+            for option in ['households', 'population', 'elderly', 'children']:
+                assert analytics_page.select_exposure_option(option, view_data['screenshot_prefix'])
+            assert analytics_page.collapse_exposure_options()
+
+            # Test Vulnerability options
+            assert analytics_page.expand_vulnerability_options(view_data['screenshot_prefix'])
+            vuln_options = [
+                'health_centres', 'electricity', 'water', 'sanitation', 'schools',
+                'rail', 'road', 'sown_area', 'sex_ratio', 'population_affected',
+                'lives_lost', 'crop_affected', 'embankments_affected',
+                'roads_damaged', 'bridges_damaged', 'embankments_breached'
+            ]
+            for option in vuln_options:
+                assert analytics_page.select_vulnerability_option(option, view_data['screenshot_prefix'])
+            assert analytics_page.collapse_vulnerability_options()
+
+            # Test Government Response options
+            assert analytics_page.expand_govt_response_options(view_data['screenshot_prefix'])
+            for option in ['flood_tenders', 'sdrf', 'repairs', 'immediate', 'others', 'funds']:
+                assert analytics_page.select_govt_response_option(option, view_data['screenshot_prefix'])
+            assert analytics_page.collapse_govt_response_options()
+
+            print(f"✅ {view_data['view_type'].upper()} view completed")
+
+
+@pytest.mark.analytics
+@pytest.mark.edge_case
+class TestAnalyticsEdgeCases:
+    """Edge cases and boundary condition tests"""
+
+    def test_rapid_view_switching(self, driver):
+        """Edge case: Rapidly switch between views"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+
+        # Rapid switching
+        for _ in range(3):
+            for view_index in [1, 2, 3]:
+                analytics_page.select_view(view_index)
+
+    def test_expand_collapse_all_sections_rapidly(self, driver):
+        """Edge case: Rapidly expand/collapse all sections"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+
+        # Rapid expand/collapse
+        for _ in range(2):
+            analytics_page.expand_hazard_options()
+            analytics_page.collapse_hazard_options()
+            analytics_page.expand_exposure_options()
+            analytics_page.collapse_exposure_options()
+            analytics_page.expand_vulnerability_options()
+            analytics_page.collapse_vulnerability_options()
+
+    def test_select_filters_without_view_selection(self, driver):
+        """Edge case: Try filters without selecting view first"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        # Don't select view, try filters directly
+        # Should still work or handle gracefully
+        analytics_page.select_district("Sivasagar")
+
+    @pytest.mark.negative
+    def test_double_expand_same_section(self, driver):
+        """Negative test: Double expand same section"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        common_page.navigate_to_analytics()
+        analytics_page.expand_hazard_options()
+        # Second expand should handle gracefully
+        analytics_page.expand_hazard_options()
