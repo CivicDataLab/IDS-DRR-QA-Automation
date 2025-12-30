@@ -1,0 +1,16 @@
+state_name: Himachal pradesh
+state_key: himachal_pradesh
+discovered_at: '2025-12-31T00:37:38.090414'
+sections:
+  hazard:
+    name: Hazard
+    indicators: []
+  exposure:
+    name: Exposure
+    indicators: []
+  vulnerability:
+    name: Vulnerability
+    indicators: []
+  government_response:
+    name: Government Response
+    indicators: []
