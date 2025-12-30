@@ -5,10 +5,12 @@ class HeaderLocators:
     """Locators for header/navigation elements"""
 
     # Navigation links
-    HOME_LINK = (By.XPATH, "//a[@aria-label='Home']//span")
-    ANALYTICS_LINK = (By.XPATH, "//a[@aria-label='Analytics']//span")
-    DATASETS_LINK = (By.XPATH, "//a[@aria-label='Datasets']//span")
-    ABOUT_US_LINK = (By.XPATH, "//a[@aria-label='About Us']//span")
+    HOME_LINK = (By.XPATH, "//span[normalize-space()='Home']")
+    ANALYTICS_LINK = (By.XPATH, "//span[normalize-space()='Analytics']")
+    DATASETS_LINK = (By.XPATH, "//span[normalize-space()='Datasets']")
+    ABOUT_US_LINK = (By.XPATH, "//span[normalize-space()='About us']")
+
+    
 
     # Alternative locators using position (fallback)
     ANALYTICS_LINK_ALT = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[2]/div/span")
@@ -18,7 +20,7 @@ class HeaderLocators:
     HEADER_LOGO = (By.XPATH, "//a[normalize-space()='']//img[@alt='IDS-DRR Logo']")
 
     # Language dropdown
-    LANGUAGE_DROPDOWN = (By.ID, "language-select")
+    LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
 
 
 class FooterLocators:

@@ -23,13 +23,13 @@ class TestDatasetNavigation:
     def test_dataset_page_header_visible(self, driver):
         """Verify header is visible on dataset page"""
         common_page = CommonPage(driver)
-        common_page.navigate_to_datasets()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         assert common_page.is_header_logo_visible(), "Header logo not visible"
 
     def test_dataset_page_footer_visible(self, driver):
         """Verify footer is visible on dataset page"""
         common_page = CommonPage(driver)
-        common_page.navigate_to_datasets()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         footer_results = common_page.check_all_footer_elements()
         assert all(footer_results.values()), "Some footer elements not visible"
 
@@ -43,7 +43,7 @@ class TestDatasetFilters:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
 
     def test_screenshot_after_filter(self, driver):
@@ -51,10 +51,11 @@ class TestDatasetFilters:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.take_dataset_screenshot("before_filter.png")
-        dataset_page.apply_source_filter_drims()
-        # Screenshot is taken automatically in apply_source_filter_drims
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        screenshot_before = dataset_page.take_dataset_screenshot("before_filter.png")
+        assert screenshot_before is not None, "Failed to take screenshot before filter"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        # Screenshot is taken automatically in apply_source_filter_drims method
 
     @pytest.mark.negative
     def test_filter_without_page_load(self, driver):
@@ -75,8 +76,8 @@ class TestDatasetSelection:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
         assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
     def test_dataset_opens_detail_page(self, driver):
@@ -84,10 +85,19 @@ class TestDatasetSelection:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
-        # Verify we're on detail page (URL changed, etc.)
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+
+        # Get current URL before clicking
+        initial_url = driver.current_url
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
+
+        # Verify we're on detail page (URL changed)
+        import time
+        time.sleep(1)  # Wait for navigation
+        current_url = driver.current_url
+        assert current_url != initial_url, "URL did not change after clicking dataset"
+        assert "datasets" in current_url.lower(), "Not on a dataset detail page"
 
 
 @pytest.mark.dataset
@@ -100,9 +110,9 @@ class TestDatasetInfoButtons:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.click_visit_source_website(), "Failed to click source website"
 
@@ -112,9 +122,9 @@ class TestDatasetInfoButtons:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.click_github_repo(), "Failed to click GitHub repo"
 
@@ -124,9 +134,9 @@ class TestDatasetInfoButtons:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.toggle_share_dataset(), "Failed to toggle share"
 
@@ -136,13 +146,13 @@ class TestDatasetInfoButtons:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
-        assert dataset_info_page.click_visit_source_website()
-        assert dataset_info_page.click_github_repo()
-        assert dataset_info_page.toggle_share_dataset()
+        assert dataset_info_page.click_visit_source_website(), "Failed to click source website"
+        assert dataset_info_page.click_github_repo(), "Failed to click GitHub repo"
+        assert dataset_info_page.toggle_share_dataset(), "Failed to toggle share"
 
 
 @pytest.mark.dataset
@@ -155,9 +165,9 @@ class TestDatasetVisualizations:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.view_visualization_1(), "Failed to view viz 1"
 
@@ -167,9 +177,9 @@ class TestDatasetVisualizations:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.view_visualization_2(), "Failed to view viz 2"
 
@@ -179,14 +189,14 @@ class TestDatasetVisualizations:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         # Toggle multiple times
-        for _ in range(2):
-            assert dataset_info_page.view_visualization_2()
-            assert dataset_info_page.view_visualization_1()
+        for iteration in range(2):
+            assert dataset_info_page.view_visualization_2(), f"Failed to view viz 2 in iteration {iteration + 1}"
+            assert dataset_info_page.view_visualization_1(), f"Failed to view viz 1 in iteration {iteration + 1}"
 
     def test_download_visualization(self, driver):
         """Test visualization download"""
@@ -194,9 +204,9 @@ class TestDatasetVisualizations:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.download_visualization(), "Failed to download viz"
 
@@ -211,9 +221,9 @@ class TestDatasetMetadata:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.click_category_link(), "Failed to click category link"
 
@@ -228,9 +238,9 @@ class TestDatasetDownloads:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         assert dataset_info_page.download_all_datasets(), "Failed to download all datasets"
 
@@ -241,9 +251,9 @@ class TestDatasetDownloads:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
         # Test specific download button
         from locators.dataset_locators import DatasetInfoPageLocators
@@ -255,7 +265,8 @@ class TestDatasetDownloads:
         ]
 
         if download_index == 3:
-            dataset_info_page.scroll_to_element(locators[download_index - 1])
+            scroll_result = dataset_info_page.scroll_to_element(locators[download_index - 1])
+            assert scroll_result, f"Failed to scroll to download button {download_index}"
 
         result = dataset_info_page.click(locators[download_index - 1], f"Download {download_index}")
         assert result, f"Failed to click download button {download_index}"
@@ -313,12 +324,12 @@ class TestDatasetEdgeCases:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
 
-        # Rapid toggling
-        for _ in range(3):
-            dataset_page.apply_source_filter_drims()
-            dataset_page.apply_source_filter_drims()  # Toggle off
+        # Rapid toggling - ensure all operations succeed
+        for iteration in range(3):
+            assert dataset_page.apply_source_filter_drims(), f"Failed to apply filter in iteration {iteration + 1}"
+            assert dataset_page.apply_source_filter_drims(), f"Failed to toggle off filter in iteration {iteration + 1}"
 
     def test_rapid_visualization_switching(self, driver):
         """Edge case: Rapidly switch visualizations"""
@@ -326,14 +337,14 @@ class TestDatasetEdgeCases:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
-        # Rapid switching
-        for _ in range(5):
-            dataset_info_page.view_visualization_2()
-            dataset_info_page.view_visualization_1()
+        # Rapid switching - ensure all switches succeed
+        for iteration in range(5):
+            assert dataset_info_page.view_visualization_2(), f"Failed to view viz 2 in iteration {iteration + 1}"
+            assert dataset_info_page.view_visualization_1(), f"Failed to view viz 1 in iteration {iteration + 1}"
 
     def test_multiple_share_toggles(self, driver):
         """Edge case: Multiple share button toggles"""
@@ -341,13 +352,13 @@ class TestDatasetEdgeCases:
         dataset_page = DatasetPage(driver)
         dataset_info_page = DatasetInfoPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
-        dataset_page.click_first_dataset()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
+        assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
-        # Toggle multiple times
-        for _ in range(3):
-            dataset_info_page.toggle_share_dataset()
+        # Toggle multiple times - ensure all toggles succeed
+        for iteration in range(3):
+            assert dataset_info_page.toggle_share_dataset(), f"Failed to toggle share in iteration {iteration + 1}"
 
     @pytest.mark.negative
     def test_download_without_opening_dataset(self, driver):
@@ -375,16 +386,22 @@ class TestDatasetNegativeTests:
         common_page = CommonPage(driver)
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         # Don't apply filter, try to click dataset
         # May work or fail depending on available datasets
-        dataset_page.click_first_dataset()
+        result = dataset_page.click_first_dataset()
+        # Assert that result is not None - it should handle gracefully either way
+        assert result is not None, "Click first dataset should return a result (True/False)"
 
     def test_empty_filter_results(self, driver):
         """Test behavior when filter returns no results"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         # This would require a filter that returns no results
-        # Implementation depends on available filters
-        pass
+        # For now, just verify the page loaded successfully
+        assert common_page.is_header_logo_visible(), "Header should be visible even with empty results"
 
     @pytest.mark.skip(reason="Requires invalid dataset ID")
     def test_invalid_dataset_id_url(self, driver):
