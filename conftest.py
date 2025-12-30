@@ -44,6 +44,13 @@ def pytest_configure(config):
     from utils.pytest_self_healing_plugin import SelfHealingPlugin
     config.pluginmanager.register(SelfHealingPlugin(), "self_healing_plugin")
 
+    # Register multi-state reporting plugin
+    from utils.pytest_multistate_plugin import MultiStateReportPlugin
+    if not hasattr(config, '_multistate_plugin'):
+        multistate_plugin = MultiStateReportPlugin()
+        config._multistate_plugin = multistate_plugin
+        config.pluginmanager.register(multistate_plugin, "multistate_report_plugin")
+
     # Add metadata to HTML report
     config._metadata = {
         "Project": "IDS-DRR QA Automation",

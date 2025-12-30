@@ -15,9 +15,14 @@ class Config:
     REMOTE_LINK = os.getenv('REMOTE_LINK', '')
 
     # URLs
-    BASE_URL = os.getenv('URL', '')
+    # Support both production and development URLs
+    # DEV_URL takes precedence if set, otherwise falls back to URL
+    BASE_URL = os.getenv('DEV_URL') or os.getenv('URL', '')
     HOME_URL_4 = os.getenv('HOME_URL_4', '')
     MEDIUM_URL = os.getenv('MEDIUM_URL', '')
+
+    # Environment indicator
+    ENVIRONMENT = 'development' if os.getenv('DEV_URL') else 'production'
 
     # Authentication
     USERNAME = os.getenv('HOME_URL_USERNAME', '')
