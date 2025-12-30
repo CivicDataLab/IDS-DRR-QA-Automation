@@ -106,33 +106,22 @@ class TestMultiStateIndicators:
             analytics_page.select_district("Sivasagar")
 
         # Expand appropriate section and select indicator
-        section_methods = {
-            "hazard": {
-                "expand": analytics_page.expand_hazard_options,
-                "select": analytics_page.select_hazard_option
-            },
-            "exposure": {
-                "expand": analytics_page.expand_exposure_options,
-                "select": analytics_page.select_exposure_option
-            },
-            "vulnerability": {
-                "expand": analytics_page.expand_vulnerability_options,
-                "select": analytics_page.select_vulnerability_option
-            },
-            "government_response": {
-                "expand": analytics_page.expand_govt_response_options,
-                "select": analytics_page.select_govt_response_option
-            }
+        section_expand_methods = {
+            "hazard": analytics_page.expand_hazard_options,
+            "exposure": analytics_page.expand_exposure_options,
+            "vulnerability": analytics_page.expand_vulnerability_options,
+            "government_response": analytics_page.expand_govt_response_options
         }
 
-        section_handler = section_methods.get(section)
-        assert section_handler, f"❌ Unknown section: {section}"
+        expand_method = section_expand_methods.get(section)
+        assert expand_method, f"❌ Unknown section: {section}"
 
         # Expand section
-        assert section_handler["expand"](), f"❌ Failed to expand {section} for {state_name}"
+        assert expand_method(), f"❌ Failed to expand {section} for {state_name}"
 
-        # Select indicator
-        assert section_handler["select"](indicator_key), \
+        # Select indicator using dynamic text-based selection
+        # This works with any indicator discovered from YAML configs
+        assert analytics_page.select_indicator_by_text(indicator_name, section), \
             f"❌ Failed to select {indicator_name} in {section} for {state_name}"
 
         # Validate map/visualization loads
@@ -252,27 +241,23 @@ class TestSectionCoverageByState:
         print(f"Total indicators: {len(indicators)}")
         print(f"{'='*60}\n")
 
-        # Section method mapping
+        # Section method mapping - use expand/collapse only
         section_methods = {
             "hazard": {
                 "expand": analytics_page.expand_hazard_options,
-                "collapse": analytics_page.collapse_hazard_options,
-                "select": analytics_page.select_hazard_option
+                "collapse": analytics_page.collapse_hazard_options
             },
             "exposure": {
                 "expand": analytics_page.expand_exposure_options,
-                "collapse": analytics_page.collapse_exposure_options,
-                "select": analytics_page.select_exposure_option
+                "collapse": analytics_page.collapse_exposure_options
             },
             "vulnerability": {
                 "expand": analytics_page.expand_vulnerability_options,
-                "collapse": analytics_page.collapse_vulnerability_options,
-                "select": analytics_page.select_vulnerability_option
+                "collapse": analytics_page.collapse_vulnerability_options
             },
             "government_response": {
                 "expand": analytics_page.expand_govt_response_options,
-                "collapse": analytics_page.collapse_govt_response_options,
-                "select": analytics_page.select_govt_response_option
+                "collapse": analytics_page.collapse_govt_response_options
             }
         }
 
@@ -282,18 +267,18 @@ class TestSectionCoverageByState:
         # Expand section
         assert handler["expand"](), f"Failed to expand {section}"
 
-        # Test each indicator
+        # Test each indicator using dynamic selection
         success_count = 0
         for indicator in indicators:
             if not indicator.get("enabled", True):
                 print(f"⏭️  Skipping disabled indicator: {indicator['name']}")
                 continue
 
-            indicator_key = indicator.get("key")
             indicator_name = indicator.get("name")
 
             try:
-                assert handler["select"](indicator_key), \
+                # Use dynamic text-based selection (works with any indicator)
+                assert analytics_page.select_indicator_by_text(indicator_name, section), \
                     f"Failed to select {indicator_name}"
 
                 print(f"✅ Successfully tested: {indicator_name}")
