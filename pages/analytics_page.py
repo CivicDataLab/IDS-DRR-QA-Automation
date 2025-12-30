@@ -18,40 +18,50 @@ class AnalyticsPage(BasePage):
 
     def select_state(self, state_name):
         """
-        Select a state from the sidebar dropdown
+        Select a state from the <select> dropdown
 
         Args:
-            state_name: Name of the state to select
+            state_name: Name of the state to select (e.g., "Assam", "Himachal pradesh")
 
         Returns:
             bool: Success status
         """
         from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support.ui import WebDriverWait, Select
         from selenium.webdriver.support import expected_conditions as EC
+        from selenium.common.exceptions import NoSuchElementException
         import time
 
         try:
-            # State selector - states are list items in the left sidebar
-            # Use case-insensitive matching
-            state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
-
-            # Wait for state element to be present
+            # Find the state select dropdown
             wait = WebDriverWait(self.driver, 10)
-            state_element = wait.until(
-                EC.presence_of_element_located((By.XPATH, state_xpath))
+            select_element = wait.until(
+                EC.presence_of_element_located((By.NAME, "State"))
             )
 
-            # Scroll into view
-            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
-            time.sleep(0.5)
+            # Create Select object
+            select = Select(select_element)
 
-            # Click the state
-            success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
-            if success:
-                time.sleep(2)  # Wait for state change and page reload
+            # Select by visible text
+            try:
+                select.select_by_visible_text(state_name)
                 print(f"✅ Selected state: {state_name}")
-            return success
+            except NoSuchElementException:
+                # Try case-insensitive match
+                print(f"⚠️  Exact match failed, trying case-insensitive match...")
+                options = select.options
+                for option in options:
+                    if option.text.strip().lower() == state_name.lower():
+                        select.select_by_visible_text(option.text.strip())
+                        print(f"✅ Selected state: {option.text.strip()}")
+                        break
+                else:
+                    print(f"❌ Could not find state: {state_name}")
+                    return False
+
+            # Wait for page to update after state selection
+            time.sleep(2)
+            return True
 
         except Exception as e:
             print(f"❌ Failed to select state {state_name}: {e}")
