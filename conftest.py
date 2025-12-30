@@ -11,9 +11,13 @@ import logging
 
 # Configure logging for self-healing
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Changed from INFO to WARNING to reduce noise
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Suppress verbose logging from selenium and urllib3
+logging.getLogger('selenium').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
 def pytest_configure(config):
