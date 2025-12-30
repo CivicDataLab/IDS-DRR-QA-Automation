@@ -1,16 +1,196 @@
 state_name: Assam
 state_key: assam
-discovered_at: '2025-12-31T00:53:01.183859'
+discovered_at: '2025-12-31T01:25:14.165637'
 sections:
   hazard:
     name: Hazard
-    indicators: []
+    indicators:
+    - name: Total Monthly Rainfall
+      key: total_monthly_rainfall
+      position: 1
+      enabled: true
+      section: Hazard
+    - name: Sum of inundation intensities
+      key: sum_of_inundation_intensities
+      position: 2
+      enabled: true
+      section: Hazard
+    - name: Mean Elevation
+      key: mean_elevation
+      position: 3
+      enabled: true
+      section: Hazard
   exposure:
     name: Exposure
-    indicators: []
+    indicators:
+    - name: Total Number of Households
+      key: total_number_of_households
+      position: 1
+      enabled: true
+      section: Exposure
+    - name: Population
+      key: population
+      position: 2
+      enabled: true
+      section: Exposure
+    - name: Elderly population
+      key: elderly_population
+      position: 3
+      enabled: true
+      section: Exposure
+    - name: Children population
+      key: children_population
+      position: 4
+      enabled: true
+      section: Exposure
   vulnerability:
     name: Vulnerability
-    indicators: []
+    indicators:
+    - name: Number of Health Centres
+      key: number_of_health_centres
+      position: 1
+      enabled: true
+      section: Vulnerability
+    - name: Average availablity of domestic electricity
+      key: average_availablity_of_domestic_electricity
+      position: 2
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households with piped water connection
+      key: percentage_of_households_with_piped_water_connection
+      position: 3
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households without sanitation facilities
+      key: percentage_of_households_without_sanitation_facilities
+      position: 4
+      enabled: true
+      section: Vulnerability
+    - name: Number of Schools
+      key: number_of_schools
+      position: 5
+      enabled: true
+      section: Vulnerability
+    - name: Length of rail in the region
+      key: length_of_rail_in_the_region
+      position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Length of Road
+      key: length_of_road
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Net Sown Area
+      key: net_sown_area
+      position: 8
+      enabled: true
+      section: Vulnerability
+    - name: Mean Sex Ratio
+      key: mean_sex_ratio
+      position: 9
+      enabled: true
+      section: Vulnerability
+    - name: Total Population Affected
+      key: total_population_affected
+      position: 10
+      enabled: true
+      section: Vulnerability
+    - name: Human Lives Lost
+      key: human_lives_lost
+      position: 11
+      enabled: true
+      section: Vulnerability
+    - name: Total Crop Area Affected
+      key: total_crop_area_affected
+      position: 12
+      enabled: true
+      section: Vulnerability
+    - name: Total Number of Embankments Affected
+      key: total_number_of_embankments_affected
+      position: 13
+      enabled: true
+      section: Vulnerability
+    - name: Total Number of Roads Damaged
+      key: total_number_of_roads_damaged
+      position: 14
+      enabled: true
+      section: Vulnerability
+    - name: Number of Bridges damaged
+      key: number_of_bridges_damaged
+      position: 15
+      enabled: true
+      section: Vulnerability
+    - name: Number of embankments breached
+      key: number_of_embankments_breached
+      position: 16
+      enabled: true
+      section: Vulnerability
+    - name: Total Infrastructure Damage
+      key: total_infrastructure_damage
+      position: 17
+      enabled: true
+      section: Vulnerability
   government_response:
     name: Government Response
-    indicators: []
+    indicators:
+    - name: Total Value of Flood Tenders
+      key: total_value_of_flood_tenders
+      position: 1
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders Under SDRF
+      key: total_value_of_flood_tenders_under_sdrf
+      position: 2
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Repairs and Restoration
+      key: total_value_of_flood_tenders_for_repairs_and_restoration
+      position: 3
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Immediate Measures
+      key: total_value_of_flood_tenders_for_immediate_measures
+      position: 4
+      enabled: true
+      section: Government Response
+    - name: Total value of flood tenders related to Others
+      key: total_value_of_flood_tenders_related_to_others
+      position: 5
+      enabled: true
+      section: Government Response
+    - name: Total value of funds allocated through SDRF during SEC meetings
+      key: total_value_of_funds_allocated_through_sdrf_during_sec_meetings
+      position: 6
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders
+      key: total_value_of_flood_tenders
+      position: 7
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders Under SDRF
+      key: total_value_of_flood_tenders_under_sdrf
+      position: 8
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Repairs and Restoration
+      key: total_value_of_flood_tenders_for_repairs_and_restoration
+      position: 9
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Immediate Measures
+      key: total_value_of_flood_tenders_for_immediate_measures
+      position: 10
+      enabled: true
+      section: Government Response
+    - name: Total value of flood tenders related to Others
+      key: total_value_of_flood_tenders_related_to_others
+      position: 11
+      enabled: true
+      section: Government Response
+    - name: Total value of funds allocated through SDRF during SEC meetings
+      key: total_value_of_funds_allocated_through_sdrf_during_sec_meetings
+      position: 12
+      enabled: true
+      section: Government Response

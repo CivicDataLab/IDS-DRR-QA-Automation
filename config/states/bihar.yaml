@@ -1,16 +1,56 @@
 state_name: Bihar
 state_key: bihar
-discovered_at: '2025-12-31T00:39:30.503530'
+discovered_at: '2025-12-31T01:25:49.947117'
 sections:
   hazard:
     name: Hazard
-    indicators: []
+    indicators:
+    - name: Total Monthly Rainfall
+      key: total_monthly_rainfall
+      position: 1
+      enabled: true
+      section: Hazard
+    - name: Mean intensity of inundation (removing 0 intensity pixels)
+      key: mean_intensity_of_inundation_removing_0_intensity_pixels
+      position: 2
+      enabled: true
+      section: Hazard
   exposure:
     name: Exposure
-    indicators: []
+    indicators:
+    - name: Total Number of Households
+      key: total_number_of_households
+      position: 1
+      enabled: true
+      section: Exposure
+    - name: Population
+      key: population
+      position: 2
+      enabled: true
+      section: Exposure
   vulnerability:
     name: Vulnerability
-    indicators: []
+    indicators:
+    - name: Average availablity of domestic electricity
+      key: average_availablity_of_domestic_electricity
+      position: 1
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households with piped water connection
+      key: percentage_of_households_with_piped_water_connection
+      position: 2
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households without sanitation facilities
+      key: percentage_of_households_without_sanitation_facilities
+      position: 3
+      enabled: true
+      section: Vulnerability
   government_response:
     name: Government Response
-    indicators: []
+    indicators:
+    - name: Total Value of Flood Tenders
+      key: total_value_of_flood_tenders
+      position: 1
+      enabled: true
+      section: Government Response
