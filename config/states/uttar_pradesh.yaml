@@ -1,0 +1,16 @@
+state_name: Uttar pradesh
+state_key: uttar_pradesh
+discovered_at: '2025-12-31T00:40:26.549096'
+sections:
+  hazard:
+    name: Hazard
+    indicators: []
+  exposure:
+    name: Exposure
+    indicators: []
+  vulnerability:
+    name: Vulnerability
+    indicators: []
+  government_response:
+    name: Government Response
+    indicators: []
