@@ -48,13 +48,28 @@ class StateIndicatorDiscovery:
         self.wait = WebDriverWait(self.driver, 10)
         self.discovered_data = {}
 
+        # Initialize common page for navigation
+        from pages.common_page import CommonPage
+        self.common_page = CommonPage(self.driver)
+
     def navigate_to_analytics(self):
-        """Navigate to analytics page"""
+        """Navigate to analytics page using CommonPage"""
         try:
-            self.driver.get(f"{Config.BASE_URL}/analytics")
-            time.sleep(2)  # Allow page to load
-            print("✅ Navigated to analytics page")
-            return True
+            # First navigate to homepage to ensure we start from a known state
+            self.driver.get(Config.BASE_URL)
+            time.sleep(1)  # Wait for homepage to load
+
+            # Use CommonPage navigation (handles fallback locators)
+            success = self.common_page.navigate_to_analytics()
+
+            if success:
+                time.sleep(2)  # Allow analytics page to fully load
+                print("✅ Navigated to analytics page using CommonPage")
+                return True
+            else:
+                print("❌ Failed to navigate to analytics using CommonPage")
+                return False
+
         except Exception as e:
             print(f"❌ Failed to navigate to analytics: {e}")
             return False
