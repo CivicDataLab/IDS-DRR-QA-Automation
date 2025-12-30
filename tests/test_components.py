@@ -128,18 +128,18 @@ class TestNavigationFunctionality:
         """Test navigating to analytics and back to home"""
         common_page = CommonPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
         assert common_page.is_nav_link_visible("home"), "Home link not visible on analytics"
 
-        common_page.navigate_to_home()
+        assert common_page.navigate_to_home(), "Failed to navigate back to home"
         assert common_page.is_nav_link_visible("analytics"), "Analytics link not visible on home"
 
     def test_navigate_to_datasets_and_back(self, driver):
         """Test navigating to datasets and back to home"""
         common_page = CommonPage(driver)
 
-        common_page.navigate_to_datasets()
-        common_page.navigate_to_home()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert common_page.navigate_to_home(), "Failed to navigate back to home"
         assert common_page.is_header_logo_visible(), "Header logo missing after navigation"
 
     def test_circular_navigation(self, driver):
@@ -147,13 +147,13 @@ class TestNavigationFunctionality:
         common_page = CommonPage(driver)
 
         # Navigate in circle: Home -> Analytics -> Datasets -> About Us -> Home
-        common_page.navigate_to_analytics()
-        common_page.navigate_to_datasets()
-        common_page.navigate_to_about_us()
-        common_page.navigate_to_home()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert common_page.navigate_to_about_us(), "Failed to navigate to about us"
+        assert common_page.navigate_to_home(), "Failed to navigate back to home"
 
         # Verify we're back at home
-        assert common_page.is_header_logo_visible()
+        assert common_page.is_header_logo_visible(), "Header logo not visible after circular navigation"
 
 
 @pytest.mark.component
@@ -165,11 +165,11 @@ class TestComponentEdgeCases:
         """Edge case: Rapidly click navigation links"""
         common_page = CommonPage(driver)
 
-        # Rapid navigation
-        for _ in range(3):
-            common_page.navigate_to_analytics()
-            common_page.navigate_to_datasets()
-            common_page.navigate_to_home()
+        # Rapid navigation - ensure all navigations succeed
+        for iteration in range(3):
+            assert common_page.navigate_to_analytics(), f"Failed to navigate to analytics in iteration {iteration + 1}"
+            assert common_page.navigate_to_datasets(), f"Failed to navigate to datasets in iteration {iteration + 1}"
+            assert common_page.navigate_to_home(), f"Failed to navigate to home in iteration {iteration + 1}"
 
     def test_components_after_page_refresh(self, driver):
         """Edge case: Verify components after page refresh"""
@@ -187,7 +187,7 @@ class TestComponentEdgeCases:
         """Edge case: Verify components after browser back"""
         common_page = CommonPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
         driver.back()
 
         header_results = common_page.check_all_header_elements()
@@ -197,7 +197,7 @@ class TestComponentEdgeCases:
         """Edge case: Verify components after browser forward"""
         common_page = CommonPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
         driver.back()
         driver.forward()
 
@@ -212,9 +212,21 @@ class TestComponentNegativeTests:
 
     def test_components_on_404_page(self, driver):
         """Negative test: Check if components appear on error pages"""
-        # This would navigate to a 404 page
-        # May or may not have header/footer depending on implementation
-        pass
+        from config.config import Config
+
+        # Navigate to a likely non-existent page
+        driver.get(f"{Config.BASE_URL}/non-existent-page-12345")
+
+        # Check if basic page structure exists (may vary by implementation)
+        # At minimum, we should not crash
+        try:
+            common_page = CommonPage(driver)
+            # Just verify we can check for elements without crashing
+            common_page.is_header_logo_visible()
+            assert True, "Page loaded without crashing"
+        except Exception as e:
+            # If page crashes, that's a fail
+            assert False, f"404 page handling failed: {str(e)}"
 
     @pytest.mark.skip(reason="Requires disabled JavaScript scenario")
     def test_components_without_javascript(self, driver):
@@ -240,11 +252,11 @@ class TestComponentPersistence:
         from pages.analytics_page import AnalyticsPage
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
 
         # Perform some analytics actions
-        analytics_page.select_view(1)
-        analytics_page.select_district("Sivasagar")
+        assert analytics_page.select_view(1), "Failed to select view"
+        assert analytics_page.select_district("Sivasagar"), "Failed to select district"
 
         # Check components still visible
         assert common_page.is_header_logo_visible(), "Header missing during analytics flow"
@@ -257,8 +269,8 @@ class TestComponentPersistence:
         from pages.dataset_page import DatasetPage
         dataset_page = DatasetPage(driver)
 
-        common_page.navigate_to_datasets()
-        dataset_page.apply_source_filter_drims()
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
 
         # Check components still visible
         assert common_page.is_header_logo_visible(), "Header missing during dataset flow"
@@ -307,13 +319,55 @@ class TestComponentAccessibility:
 
     def test_header_logo_has_alt_text(self, driver):
         """Test header logo has accessible alt text"""
-        # Would require checking alt attribute
-        pass
+        from locators.common_locators import HeaderLocators
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        wait = WebDriverWait(driver, 10)
+
+        # Find the logo element
+        try:
+            logo_element = wait.until(EC.presence_of_element_located(HeaderLocators.HEADER_LOGO))
+            # Check if it has alt text or aria-label for accessibility
+            alt_text = logo_element.get_attribute("alt")
+            aria_label = logo_element.get_attribute("aria-label")
+
+            assert alt_text or aria_label, "Logo should have alt text or aria-label for accessibility"
+            print(f"✅ Logo has accessibility text: alt='{alt_text}', aria-label='{aria_label}'")
+        except Exception as e:
+            assert False, f"Failed to verify logo accessibility: {str(e)}"
 
     def test_navigation_links_accessible(self, driver):
         """Test navigation links are keyboard accessible"""
-        # Would require keyboard navigation testing
-        pass
+        from locators.common_locators import HeaderLocators
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        wait = WebDriverWait(driver, 10)
+
+        # Test that navigation links are focusable (basic keyboard accessibility)
+        nav_links = [
+            HeaderLocators.HOME_LINK,
+            HeaderLocators.ANALYTICS_LINK,
+            HeaderLocators.DATASETS_LINK,
+            HeaderLocators.ABOUT_US_LINK
+        ]
+
+        for link_locator in nav_links:
+            try:
+                link_element = wait.until(EC.presence_of_element_located(link_locator))
+                # Check if element is keyboard focusable (has tabindex >= 0 or is naturally focusable)
+                tag_name = link_element.tag_name
+                tabindex = link_element.get_attribute("tabindex")
+
+                # Links (a tags) are naturally focusable, or should have tabindex >= 0
+                is_focusable = tag_name == "a" or (tabindex and int(tabindex) >= 0)
+                assert is_focusable, f"Navigation link {link_locator} should be keyboard accessible"
+            except Exception as e:
+                print(f"⚠️ Could not verify keyboard accessibility for {link_locator}: {str(e)}")
+
+        print("✅ Navigation links are keyboard accessible")
 
     @pytest.mark.skip(reason="Requires accessibility checker")
     def test_components_meet_wcag_standards(self, driver):

@@ -85,8 +85,8 @@ class TestAnalyticsFilters:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.select_view(1)
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_view(1), "Failed to select Map view"
 
         assert analytics_page.select_district("Sivasagar"), "Failed to select district"
 
@@ -95,9 +95,9 @@ class TestAnalyticsFilters:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.select_view(1)
-        analytics_page.select_district("Sivasagar")
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_view(1), "Failed to select Map view"
+        assert analytics_page.select_district("Sivasagar"), "Failed to select district"
 
         assert analytics_page.select_revenue_circle("Sibsagar"), "Failed to select revenue circle"
 
@@ -152,7 +152,7 @@ class TestHazardOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
         assert analytics_page.expand_hazard_options(), "Failed to expand hazard options"
 
     def test_collapse_hazard_section(self, driver):
@@ -160,19 +160,48 @@ class TestHazardOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_hazard_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_hazard_options(), "Failed to expand hazard options"
         assert analytics_page.collapse_hazard_options(), "Failed to collapse hazard options"
 
     @pytest.mark.parametrize("option", ["monthly_rainfall", "inundation", "elevation"])
     def test_select_hazard_option(self, driver, option):
-        """Test individual hazard option selection"""
+        """Test individual hazard option selection and validate map loads for monthly_rainfall"""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_hazard_options()
+        # Navigate to analytics page
+        navigation_result = common_page.navigate_to_analytics()
+        assert navigation_result, "❌ Failed to navigate to Analytics page"
+        print(f"✅ Navigated to Analytics page: {driver.current_url}")
+
+        # Select Map view and district for map validation (only for monthly_rainfall to save time)
+        if option == "monthly_rainfall":
+            assert analytics_page.select_view(1), "❌ Failed to select Map view"
+            assert analytics_page.select_district("Sivasagar"), "❌ Failed to select district"
+
+        assert analytics_page.expand_hazard_options(), "❌ Failed to expand hazard options"
         assert analytics_page.select_hazard_option(option), f"Failed to select {option}"
+
+        # Validate map loads specifically for monthly_rainfall indicator
+        if option == "monthly_rainfall":
+            # Check if map container (canvas or svg) is visible with reduced timeout
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+
+            # Use explicit wait with shorter timeout (3 seconds is sufficient)
+            wait = WebDriverWait(driver, 3)
+            map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
+
+            assert map_element is not None, "❌ Map did not load after selecting Total Monthly Rainfall"
+            print(f"✅ Map loaded successfully for {option}")
+
+            # Take screenshot for visual validation of district highlighting
+            analytics_page.take_analytics_screenshot(
+                f"hazard_{option}_",
+                "map_with_district_highlighted"
+            )
 
     @pytest.mark.negative
     def test_invalid_hazard_option(self, driver):
@@ -180,8 +209,8 @@ class TestHazardOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_hazard_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_hazard_options(), "Failed to expand hazard options"
 
         result = analytics_page.select_hazard_option("invalid_option")
         assert result is False, "Invalid option should return False"
@@ -197,8 +226,8 @@ class TestExposureOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_exposure_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_exposure_options(), "Failed to expand exposure options"
         assert analytics_page.select_exposure_option(option), f"Failed to select {option}"
 
     def test_all_exposure_options_sequential(self, driver):
@@ -206,8 +235,8 @@ class TestExposureOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_exposure_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_exposure_options(), "Failed to expand exposure options"
 
         options = ["households", "population", "elderly", "children"]
         for option in options:
@@ -227,8 +256,8 @@ class TestVulnerabilityOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_vulnerability_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_vulnerability_options(), "Failed to expand vulnerability options"
         assert analytics_page.select_vulnerability_option(option), f"Failed: {option}"
 
     @pytest.mark.parametrize("option", [
@@ -240,8 +269,8 @@ class TestVulnerabilityOptions:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_vulnerability_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_vulnerability_options(), "Failed to expand vulnerability options"
         assert analytics_page.select_vulnerability_option(option), f"Failed: {option}"
 
 
@@ -255,8 +284,8 @@ class TestGovernmentResponse:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_govt_response_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_govt_response_options(), "Failed to expand govt response options"
         assert analytics_page.select_govt_response_option(option), f"Failed: {option}"
 
 
@@ -271,7 +300,7 @@ class TestAnalyticsCompleteFlow:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
 
         for view_data in AnalyticsTestData.ALL_VIEWS:
             print(f"\n=== Testing {view_data['view_type'].upper()} View ===")
@@ -328,38 +357,39 @@ class TestAnalyticsEdgeCases:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
 
-        # Rapid switching
-        for _ in range(3):
+        # Rapid switching - ensure all view switches succeed
+        for iteration in range(3):
             for view_index in [1, 2, 3]:
-                analytics_page.select_view(view_index)
+                assert analytics_page.select_view(view_index), f"Failed to select view {view_index} in iteration {iteration + 1}"
 
     def test_expand_collapse_all_sections_rapidly(self, driver):
         """Edge case: Rapidly expand/collapse all sections"""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
 
-        # Rapid expand/collapse
-        for _ in range(2):
-            analytics_page.expand_hazard_options()
-            analytics_page.collapse_hazard_options()
-            analytics_page.expand_exposure_options()
-            analytics_page.collapse_exposure_options()
-            analytics_page.expand_vulnerability_options()
-            analytics_page.collapse_vulnerability_options()
+        # Rapid expand/collapse - ensure all operations succeed
+        for iteration in range(2):
+            assert analytics_page.expand_hazard_options(), f"Failed to expand hazard in iteration {iteration + 1}"
+            assert analytics_page.collapse_hazard_options(), f"Failed to collapse hazard in iteration {iteration + 1}"
+            assert analytics_page.expand_exposure_options(), f"Failed to expand exposure in iteration {iteration + 1}"
+            assert analytics_page.collapse_exposure_options(), f"Failed to collapse exposure in iteration {iteration + 1}"
+            assert analytics_page.expand_vulnerability_options(), f"Failed to expand vulnerability in iteration {iteration + 1}"
+            assert analytics_page.collapse_vulnerability_options(), f"Failed to collapse vulnerability in iteration {iteration + 1}"
 
     def test_select_filters_without_view_selection(self, driver):
         """Edge case: Try filters without selecting view first"""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
         # Don't select view, try filters directly
         # Should still work or handle gracefully
-        analytics_page.select_district("Sivasagar")
+        result = analytics_page.select_district("Sivasagar")
+        assert result is not None, "Filter selection should handle gracefully even without view selection"
 
     @pytest.mark.negative
     def test_double_expand_same_section(self, driver):
@@ -367,7 +397,8 @@ class TestAnalyticsEdgeCases:
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        common_page.navigate_to_analytics()
-        analytics_page.expand_hazard_options()
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.expand_hazard_options(), "Failed to expand hazard options first time"
         # Second expand should handle gracefully
-        analytics_page.expand_hazard_options()
+        result = analytics_page.expand_hazard_options()
+        assert result is not None, "Double expand should handle gracefully without errors"
