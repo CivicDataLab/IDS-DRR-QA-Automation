@@ -9,13 +9,9 @@ from utils.driver_factory import DriverFactory
 from config.config import Config
 import logging
 
-# Configure logging for self-healing
-logging.basicConfig(
-    level=logging.WARNING,  # Changed from INFO to WARNING to reduce noise
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
 # Suppress verbose logging from selenium and urllib3
+# Note: Root logging configuration is handled by pytest.ini to avoid conflicts
+# with pytest-xdist parallel workers in CI environments
 logging.getLogger('selenium').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
