@@ -192,6 +192,59 @@ class AnalyticsPage(BasePage):
             print(f"❌ Error in collapse_hazard_options: {e}")
             return False
 
+    def select_indicator_by_text(self, indicator_text, section_name="Indicator"):
+        """
+        Dynamically select an indicator by its text label (supports any indicator)
+
+        Args:
+            indicator_text: The exact text of the indicator (e.g., "Total Monthly Rainfall")
+            section_name: Section name for logging (Hazard, Exposure, etc.)
+
+        Returns:
+            bool: Success status
+        """
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        import time
+
+        try:
+            # Find label with matching aria-label or text
+            # Try aria-label first (most reliable)
+            label_xpath = f"//label[@aria-label='{indicator_text}']"
+
+            wait = WebDriverWait(self.driver, 10)
+
+            try:
+                label_element = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, label_xpath))
+                )
+            except:
+                # Fallback: try finding by visible text in span
+                label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+                label_element = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, label_xpath))
+                )
+
+            # Scroll into view
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", label_element)
+            time.sleep(0.3)
+
+            # Click the label
+            try:
+                label_element.click()
+            except:
+                # JavaScript click fallback
+                self.driver.execute_script("arguments[0].click();", label_element)
+
+            print(f"✅ Selected indicator: {indicator_text}")
+            time.sleep(0.5)  # Wait for UI to update
+            return True
+
+        except Exception as e:
+            print(f"❌ Failed to select indicator '{indicator_text}': {e}")
+            return False
+
     def select_hazard_option(self, option_name, screenshot_prefix=None):
         """
         Select a hazard option
