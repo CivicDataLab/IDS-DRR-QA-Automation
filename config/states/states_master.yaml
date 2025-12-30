@@ -1,12 +1,48 @@
-discovery_timestamp: '2025-12-31T00:52:51.207977'
+discovery_timestamp: '2025-12-31T01:25:06.701907'
 total_states: 5
 states:
   assam:
     name: Assam
     config_file: assam.yaml
-    total_indicators: 0
+    total_indicators: 36
     sections:
-      hazard: 0
-      exposure: 0
-      vulnerability: 0
-      government_response: 0
+      hazard: 3
+      exposure: 4
+      vulnerability: 17
+      government_response: 12
+  himachal_pradesh:
+    name: Himachal pradesh
+    config_file: himachal_pradesh.yaml
+    total_indicators: 39
+    sections:
+      hazard: 6
+      exposure: 7
+      vulnerability: 19
+      government_response: 7
+  odisha:
+    name: Odisha
+    config_file: odisha.yaml
+    total_indicators: 25
+    sections:
+      hazard: 9
+      exposure: 2
+      vulnerability: 8
+      government_response: 6
+  bihar:
+    name: Bihar
+    config_file: bihar.yaml
+    total_indicators: 8
+    sections:
+      hazard: 2
+      exposure: 2
+      vulnerability: 3
+      government_response: 1
+  uttar_pradesh:
+    name: Uttar pradesh
+    config_file: uttar_pradesh.yaml
+    total_indicators: 7
+    sections:
+      hazard: 1
+      exposure: 2
+      vulnerability: 3
+      government_response: 1
