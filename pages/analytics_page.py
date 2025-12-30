@@ -18,7 +18,7 @@ class AnalyticsPage(BasePage):
 
     def select_state(self, state_name):
         """
-        Select a state from the sidebar
+        Select a state from the sidebar dropdown
 
         Args:
             state_name: Name of the state to select
@@ -27,15 +27,29 @@ class AnalyticsPage(BasePage):
             bool: Success status
         """
         from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
         import time
 
         try:
-            # State selector based on screenshot - states are in a list on the left sidebar
+            # State selector - states are list items in the left sidebar
+            # Use case-insensitive matching
             state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
 
+            # Wait for state element to be present
+            wait = WebDriverWait(self.driver, 10)
+            state_element = wait.until(
+                EC.presence_of_element_located((By.XPATH, state_xpath))
+            )
+
+            # Scroll into view
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
+            time.sleep(0.5)
+
+            # Click the state
             success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
             if success:
-                time.sleep(1.5)  # Wait for state change to take effect
+                time.sleep(2)  # Wait for state change and page reload
                 print(f"✅ Selected state: {state_name}")
             return success
 

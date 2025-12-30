@@ -61,25 +61,39 @@ class StateIndicatorDiscovery:
 
     def get_available_states(self):
         """
-        Discover available states from the dropdown
+        Discover available states from the dropdown in the sidebar
 
         Returns:
             list: Available state names
         """
         try:
-            # First, try to find the state dropdown in the sidebar
-            # Based on the screenshot, the state dropdown is in the left sidebar
-            state_options_xpath = "//div[contains(@class, 'analytics')]//li[contains(text(), 'Assam') or contains(text(), 'Himachal') or contains(text(), 'Odisha') or contains(text(), 'Bihar') or contains(text(), 'Uttar')]"
+            # Look for the state dropdown/list in the sidebar
+            # The states appear as list items (li) in a collapsible section
 
-            # Try to find state selection elements
+            # First, try to find and click the states section to expand it
             try:
-                state_elements = self.driver.find_elements(By.XPATH, state_options_xpath)
-                if state_elements:
-                    states = [elem.text.strip() for elem in state_elements if elem.text.strip()]
-                    print(f"✅ Discovered {len(states)} states from UI: {states}")
-                    return states
+                # Look for "Assam" text which indicates the dropdown section
+                states_section_xpath = "//div[contains(@class, 'analytics') or contains(@role, 'navigation')]//li[contains(text(), 'Assam')]"
+
+                # Get all list items that might be states
+                state_items = self.driver.find_elements(
+                    By.XPATH,
+                    "//li[contains(text(), 'Assam') or contains(text(), 'Himachal') or contains(text(), 'Odisha') or contains(text(), 'Bihar') or contains(text(), 'Uttar')]"
+                )
+
+                if state_items:
+                    states = []
+                    for item in state_items:
+                        text = item.text.strip()
+                        if text and text not in states:
+                            states.append(text)
+
+                    if states:
+                        print(f"✅ Discovered {len(states)} states from UI: {states}")
+                        return states
+
             except Exception as e:
-                print(f"⚠️  Could not find state dropdown in UI: {e}")
+                print(f"⚠️  Could not find state list items: {e}")
 
             # Fallback to predefined list
             print(f"ℹ️  Using predefined state list: {self.STATE_LIST}")
@@ -91,7 +105,7 @@ class StateIndicatorDiscovery:
 
     def select_state(self, state_name):
         """
-        Select a state from the sidebar
+        Select a state from the sidebar dropdown
 
         Args:
             state_name: Name of the state to select
@@ -100,19 +114,44 @@ class StateIndicatorDiscovery:
             bool: Success status
         """
         try:
-            # Based on screenshot, states are in a list on the left sidebar
+            # Navigate to analytics page first to ensure we're on the right page
+            if "/analytics" not in self.driver.current_url:
+                self.navigate_to_analytics()
+
+            # Based on the screenshot, states are list items in the left sidebar
+            # Try multiple strategies to find and click the state
+
+            # Strategy 1: Exact text match (case-insensitive)
             state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
 
-            state_element = self.wait.until(
-                EC.element_to_be_clickable((By.XPATH, state_xpath))
-            )
-            state_element.click()
-            time.sleep(1.5)  # Wait for state change
-            print(f"✅ Selected state: {state_name}")
-            return True
+            try:
+                state_element = self.wait.until(
+                    EC.presence_of_element_located((By.XPATH, state_xpath))
+                )
+
+                # Scroll element into view
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
+                time.sleep(0.5)
+
+                # Try to click
+                try:
+                    state_element.click()
+                except:
+                    # If regular click fails, try JavaScript click
+                    self.driver.execute_script("arguments[0].click();", state_element)
+
+                time.sleep(2)  # Wait for state change and page reload
+                print(f"✅ Selected state: {state_name}")
+                return True
+
+            except TimeoutException:
+                print(f"❌ Could not find state element for: {state_name}")
+                return False
 
         except Exception as e:
             print(f"❌ Failed to select state {state_name}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def discover_section_indicators(self, section_name, expand_locator, container_xpath):

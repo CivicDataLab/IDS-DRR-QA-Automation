@@ -1,0 +1,16 @@
+state_name: Odisha
+state_key: odisha
+discovered_at: '2025-12-31T00:38:34.112668'
+sections:
+  hazard:
+    name: Hazard
+    indicators: []
+  exposure:
+    name: Exposure
+    indicators: []
+  vulnerability:
+    name: Vulnerability
+    indicators: []
+  government_response:
+    name: Government Response
+    indicators: []
