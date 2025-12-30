@@ -60,8 +60,9 @@ jobs:
 
       - name: Run tests
         env:
-          # Application URLs
+          # Application URLs (DEV_URL takes precedence if set)
           URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
           HOME_URL_4: ${{ secrets.HOME_URL_4 }}
           MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
 
@@ -337,8 +338,9 @@ jobs:
 
       - name: Run smoke tests
         env:
-          # Application URLs
+          # Application URLs (DEV_URL takes precedence if set)
           URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
           HOME_URL_4: ${{ secrets.HOME_URL_4 }}
           MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
 
@@ -365,3 +367,99 @@ jobs:
           name: smoke-test-report
           path: reports/smoke_report.html
           retention-days: 7
+
+  multistate-test:
+    name: Multi-State Analytics Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[multistate]')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyyaml  # Ensure YAML support for state configs
+
+      - name: Check if state configs exist
+        id: check_configs
+        run: |
+          if [ -d "config/states" ] && [ -f "config/states/states_master.yaml" ]; then
+            echo "configs_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "configs_exist=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run state discovery
+        if: steps.check_configs.outputs.configs_exist == 'false'
+        env:
+          URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+          HEADLESS: true
+          DEFAULT_TIMEOUT: 10
+        run: |
+          echo "State configs not found, running discovery..."
+          python scripts/discover_state_indicators.py || echo "Discovery failed, will use fallback"
+
+      - name: Run multi-state tests
+        env:
+          # Application URLs (DEV_URL takes precedence if set)
+          URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
+          HOME_URL_4: ${{ secrets.HOME_URL_4 }}
+          MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
+
+          # Authentication
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+
+          # Browser Settings
+          HEADLESS: true
+          BROWSER: chrome
+          LOCAL: true
+
+          # Timeout Settings
+          DEFAULT_TIMEOUT: 10
+          SHORT_TIMEOUT: 5
+          LONG_TIMEOUT: 15
+        run: |
+          mkdir -p reports/multistate
+
+          # Run multi-state tests with parallel execution
+          pytest tests/test_analytics_multistate.py \
+            -v \
+            -n 4 \
+            --html=reports/multistate_test_report.html \
+            --self-contained-html \
+            --junitxml=reports/multistate_junit.xml \
+            -m multistate || true
+
+      - name: Upload multi-state reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multistate-test-reports
+          path: |
+            reports/multistate/
+            reports/multistate_test_report.html
+            reports/multistate_junit.xml
+            config/states/
+          retention-days: 30
+
+      - name: Upload multi-state screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multistate-screenshots
+          path: screenshots/analytics/
+          retention-days: 14
+          if-no-files-found: ignore

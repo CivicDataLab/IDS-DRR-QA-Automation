@@ -16,6 +16,55 @@ class AnalyticsPage(BasePage):
         super().__init__(driver)
         self.screenshot_dir = Config.ANALYTICS_SCREENSHOTS_DIR
 
+    def select_state(self, state_name):
+        """
+        Select a state from the sidebar
+
+        Args:
+            state_name: Name of the state to select
+
+        Returns:
+            bool: Success status
+        """
+        from selenium.webdriver.common.by import By
+        import time
+
+        try:
+            # State selector based on screenshot - states are in a list on the left sidebar
+            state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
+
+            success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
+            if success:
+                time.sleep(1.5)  # Wait for state change to take effect
+                print(f"✅ Selected state: {state_name}")
+            return success
+
+        except Exception as e:
+            print(f"❌ Failed to select state {state_name}: {e}")
+            return False
+
+    def get_current_state(self):
+        """
+        Get the currently selected state
+
+        Returns:
+            str: Current state name or None
+        """
+        from selenium.webdriver.common.by import By
+
+        try:
+            # Find the active/selected state in the sidebar
+            active_state_xpath = "//li[contains(@class, 'selected') or contains(@class, 'active')]"
+            element = self.find_element((By.XPATH, active_state_xpath))
+
+            if element:
+                return element.text.strip()
+
+        except Exception as e:
+            print(f"⚠️  Could not determine current state: {e}")
+
+        return None
+
     def select_view(self, view_index):
         """
         Select analytics view (1=Map, 2=Chart, 3=Table)
