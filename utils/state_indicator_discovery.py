@@ -187,32 +187,67 @@ class StateIndicatorDiscovery:
             # Expand the section
             expand_btn = self.wait.until(EC.element_to_be_clickable(expand_locator))
 
+            # Scroll element into view to avoid header overlap
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", expand_btn)
+            time.sleep(0.5)  # Wait for scroll animation
+
             # Check if already expanded by looking for aria-expanded or class
             is_expanded = expand_btn.get_attribute("aria-expanded") == "true"
 
             if not is_expanded:
-                expand_btn.click()
+                # Use JavaScript click as fallback if regular click is intercepted
+                try:
+                    expand_btn.click()
+                except Exception as e:
+                    print(f"   ⚠️  Regular click failed, using JavaScript click: {e}")
+                    self.driver.execute_script("arguments[0].click();", expand_btn)
                 time.sleep(0.5)
 
-            # Find all indicator elements in the container
-            # Looking for radio buttons or checkboxes with labels
-            indicator_elements = self.driver.find_elements(
-                By.XPATH,
-                f"{container_xpath}//label//span[not(contains(@class, 'radio') or contains(@class, 'checkbox'))]"
-            )
+            # Find all indicator label elements
+            # Labels have aria-label attribute with the indicator name
+            # Structure: <label aria-label="Total Monthly Rainfall"><span>Total Monthly Rainfall</span></label>
+
+            # Try multiple strategies to find indicators
+            indicator_elements = []
+
+            # Strategy 1: Find labels with aria-label attribute (most reliable)
+            try:
+                labels = self.driver.find_elements(
+                    By.XPATH,
+                    f"{container_xpath}//label[@aria-label]"
+                )
+                if labels:
+                    indicator_elements = labels
+                    print(f"   Found {len(labels)} indicators using aria-label")
+            except:
+                pass
+
+            # Strategy 2: If no aria-labels found, try finding spans with text
+            if not indicator_elements:
+                try:
+                    spans = self.driver.find_elements(
+                        By.XPATH,
+                        f"{container_xpath}//label//span[contains(@class, 'Text-module')]"
+                    )
+                    if spans:
+                        indicator_elements = spans
+                        print(f"   Found {len(spans)} indicators using span text")
+                except:
+                    pass
 
             for idx, element in enumerate(indicator_elements, 1):
                 try:
-                    indicator_text = element.text.strip()
-                    if indicator_text:
-                        # Get the parent to find the input element
-                        parent = element.find_element(By.XPATH, "./ancestor::div[@role='radio' or @role='checkbox']")
+                    # Get indicator name from aria-label first, fallback to text
+                    indicator_text = element.get_attribute("aria-label")
+                    if not indicator_text:
+                        indicator_text = element.text.strip()
 
+                    if indicator_text:
                         indicator_data = {
                             "name": indicator_text,
                             "key": self._sanitize_key(indicator_text),
                             "position": idx,
-                            "enabled": parent.get_attribute("aria-disabled") != "true",
+                            "enabled": True,  # Assume enabled by default
                             "section": section_name
                         }
                         indicators.append(indicator_data)
@@ -225,6 +260,8 @@ class StateIndicatorDiscovery:
 
         except Exception as e:
             print(f"❌ Failed to discover {section_name} indicators: {e}")
+            import traceback
+            traceback.print_exc()
 
         return indicators
 
