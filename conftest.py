@@ -174,4 +174,6 @@ def pytest_html_results_table_header(cells):
 def pytest_html_results_table_row(report, cells):
     """Customize HTML report table rows"""
     cells.insert(2, f'<td>{getattr(report, "description", "")}</td>')
-    cells.insert(3, f'<td>{report.duration:.2f}s</td>')
+    # Only show duration for test reports, not collection reports
+    duration = getattr(report, 'duration', 0)
+    cells.insert(3, f'<td>{duration:.2f}s</td>')
