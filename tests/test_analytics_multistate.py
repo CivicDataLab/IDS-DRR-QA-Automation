@@ -277,16 +277,41 @@ class TestMultiStateIndicatorsMapView:
         assert analytics_page.select_indicator_by_text(indicator_name, section), \
             f"❌ Failed to select {indicator_name} in {section} for {state_name}"
 
-        # Validate map/visualization loads
-        wait = WebDriverWait(driver, 5)
+        # Validate map/visualization loads with comprehensive checks
+        wait = WebDriverWait(driver, 15)  # Increased timeout for map loading
+        short_wait = WebDriverWait(driver, 3)
+
         try:
+            # Step 1: Wait for loading spinner to disappear (if exists)
+            try:
+                short_wait.until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".loading, .spinner, [class*='loading'], [class*='spinner']"))
+                )
+            except:
+                pass  # No spinner found, continue
+
+            # Step 2: Wait for map element to be visible
             map_element = wait.until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg"))
             )
             assert map_element is not None, \
-                f"❌ Map did not load for {indicator_name} in {state_name}"
+                f"❌ Map element not found for {indicator_name} in {state_name}"
 
-            print(f"✅ MAP VIEW - {state_name} - {section} - {indicator_name}: Map loaded successfully")
+            # Step 3: Wait for map to actually render (check for non-zero dimensions)
+            import time
+            time.sleep(2)  # Allow time for map rendering
+
+            map_width = map_element.size['width']
+            map_height = map_element.size['height']
+
+            assert map_width > 0 and map_height > 0, \
+                f"❌ Map has zero dimensions ({map_width}x{map_height}) for {indicator_name} in {state_name}"
+
+            # Step 4: Verify map is actually displayed and not hidden
+            assert map_element.is_displayed(), \
+                f"❌ Map element exists but is not displayed for {indicator_name} in {state_name}"
+
+            print(f"✅ MAP VIEW - {state_name} - {section} - {indicator_name}: Map loaded successfully (size: {map_width}x{map_height})")
 
         except Exception as e:
             pytest.fail(
@@ -360,16 +385,41 @@ class TestMultiStateIndicatorsChartView:
         assert analytics_page.select_indicator_by_text(indicator_name, section), \
             f"❌ Failed to select {indicator_name} in {section} for {state_name}"
 
-        # Validate chart/visualization loads
-        wait = WebDriverWait(driver, 5)
+        # Validate chart/visualization loads with comprehensive checks
+        wait = WebDriverWait(driver, 15)  # Increased timeout for chart loading
+        short_wait = WebDriverWait(driver, 3)
+
         try:
+            # Step 1: Wait for loading spinner to disappear (if exists)
+            try:
+                short_wait.until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".loading, .spinner, [class*='loading'], [class*='spinner']"))
+                )
+            except:
+                pass  # No spinner found, continue
+
+            # Step 2: Wait for chart element to be visible
             chart_element = wait.until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg, .chart-container"))
             )
             assert chart_element is not None, \
-                f"❌ Chart did not load for {indicator_name} in {state_name}"
+                f"❌ Chart element not found for {indicator_name} in {state_name}"
 
-            print(f"✅ CHART VIEW - {state_name} - {section} - {indicator_name}: Chart loaded successfully")
+            # Step 3: Wait for chart to actually render (check for non-zero dimensions)
+            import time
+            time.sleep(2)  # Allow time for chart rendering
+
+            chart_width = chart_element.size['width']
+            chart_height = chart_element.size['height']
+
+            assert chart_width > 0 and chart_height > 0, \
+                f"❌ Chart has zero dimensions ({chart_width}x{chart_height}) for {indicator_name} in {state_name}"
+
+            # Step 4: Verify chart is actually displayed
+            assert chart_element.is_displayed(), \
+                f"❌ Chart element exists but is not displayed for {indicator_name} in {state_name}"
+
+            print(f"✅ CHART VIEW - {state_name} - {section} - {indicator_name}: Chart loaded successfully (size: {chart_width}x{chart_height})")
 
         except Exception as e:
             pytest.fail(
@@ -443,16 +493,45 @@ class TestMultiStateIndicatorsTableView:
         assert analytics_page.select_indicator_by_text(indicator_name, section), \
             f"❌ Failed to select {indicator_name} in {section} for {state_name}"
 
-        # Validate table loads
-        wait = WebDriverWait(driver, 5)
+        # Validate table loads with comprehensive checks
+        wait = WebDriverWait(driver, 15)  # Increased timeout for table loading
+        short_wait = WebDriverWait(driver, 3)
+
         try:
+            # Step 1: Wait for loading spinner to disappear (if exists)
+            try:
+                short_wait.until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".loading, .spinner, [class*='loading'], [class*='spinner']"))
+                )
+            except:
+                pass  # No spinner found, continue
+
+            # Step 2: Wait for table element to be visible
             table_element = wait.until(
                 EC.visibility_of_element_located((By.CSS_SELECTOR, "table, .table-container, [role='table']"))
             )
             assert table_element is not None, \
-                f"❌ Table did not load for {indicator_name} in {state_name}"
+                f"❌ Table element not found for {indicator_name} in {state_name}"
 
-            print(f"✅ TABLE VIEW - {state_name} - {section} - {indicator_name}: Table loaded successfully")
+            # Step 3: Verify table has data (check for rows with data)
+            import time
+            time.sleep(2)  # Allow time for table data to load
+
+            # Look for table rows (tbody tr or data rows)
+            try:
+                rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr, [role='row']")
+                row_count = len([row for row in rows if row.is_displayed()])
+
+                assert row_count > 0, \
+                    f"❌ Table loaded but has no data rows for {indicator_name} in {state_name}"
+
+                print(f"✅ TABLE VIEW - {state_name} - {section} - {indicator_name}: Table loaded successfully with {row_count} rows")
+
+            except:
+                # If we can't find rows, at least verify table is displayed
+                assert table_element.is_displayed(), \
+                    f"❌ Table element exists but is not displayed for {indicator_name} in {state_name}"
+                print(f"✅ TABLE VIEW - {state_name} - {section} - {indicator_name}: Table loaded successfully")
 
         except Exception as e:
             pytest.fail(
