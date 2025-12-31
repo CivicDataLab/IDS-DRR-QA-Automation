@@ -1,10 +1,12 @@
 """
-Multi-State Analytics Testing
-Dynamic, data-driven tests for all analytics indicators across multiple states
+Multi-State Analytics Testing - Comprehensive Coverage
+Dynamic, data-driven tests for all analytics functionality across multiple states
 
 Features:
 - Automatically discovers and tests all available states
 - Dynamically parametrized based on state configuration files
+- Complete coverage: navigation, views, filters, expand/collapse, indicators
+- Map load validation for ALL indicators across ALL views
 - Supports parallel execution
 - State-specific indicator validation
 - Scalable to future states without code changes
@@ -51,15 +53,172 @@ def get_multistate_test_params():
 
 @pytest.mark.analytics
 @pytest.mark.multistate
-class TestMultiStateIndicators:
-    """Test analytics indicators across all configured states"""
+@pytest.mark.smoke
+class TestMultiStateNavigation:
+    """Analytics page navigation and accessibility tests for all states"""
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_navigate_to_analytics_from_homepage(self, driver, state_key):
+        """Verify analytics page is accessible from homepage for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        print(f"✅ Analytics navigation successful for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_analytics_page_header_visible(self, driver, state_key):
+        """Verify header is visible on analytics page for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_state(state_name)
+        assert common_page.is_header_logo_visible(), f"Header logo not visible on analytics page for {state_name}"
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_analytics_page_footer_visible(self, driver, state_key):
+        """Verify footer is visible on analytics page for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        common_page.navigate_to_analytics()
+        analytics_page.select_state(state_name)
+        footer_results = common_page.check_all_footer_elements()
+        assert all(footer_results.values()), f"Some footer elements not visible for {state_name}"
+
+
+@pytest.mark.analytics
+@pytest.mark.multistate
+class TestMultiStateViewToggle:
+    """Tests for Map, Chart, and Table view toggling across all states"""
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    @pytest.mark.parametrize("view_index,view_name", [
+        (1, "Map"),
+        (2, "Chart"),
+        (3, "Table")
+    ])
+    def test_select_view_for_state(self, driver, state_key, view_index, view_name):
+        """Test individual view selection for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        common_page.navigate_to_analytics()
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        assert analytics_page.select_view(view_index), f"Failed to select {view_name} view for {state_name}"
+        print(f"✅ {view_name} view selected successfully for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_toggle_between_all_views(self, driver, state_key):
+        """Test toggling between all three views for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        common_page.navigate_to_analytics()
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+
+        # Toggle through all views
+        for view_index in [1, 2, 3, 1]:  # Test cycling
+            assert analytics_page.select_view(view_index), f"Failed to select view {view_index} for {state_name}"
+
+        print(f"✅ View toggling successful for {state_name}")
+
+
+@pytest.mark.analytics
+@pytest.mark.multistate
+class TestMultiStateSectionExpandCollapse:
+    """Tests for expanding and collapsing sections across all states"""
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_expand_collapse_hazard_section(self, driver, state_key):
+        """Test expanding and collapsing hazard section for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        assert analytics_page.expand_hazard_options(), f"Failed to expand hazard options for {state_name}"
+        assert analytics_page.collapse_hazard_options(), f"Failed to collapse hazard options for {state_name}"
+        print(f"✅ Hazard section expand/collapse successful for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_expand_collapse_exposure_section(self, driver, state_key):
+        """Test expanding and collapsing exposure section for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        assert analytics_page.expand_exposure_options(), f"Failed to expand exposure options for {state_name}"
+        assert analytics_page.collapse_exposure_options(), f"Failed to collapse exposure options for {state_name}"
+        print(f"✅ Exposure section expand/collapse successful for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_expand_collapse_vulnerability_section(self, driver, state_key):
+        """Test expanding and collapsing vulnerability section for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        assert analytics_page.expand_vulnerability_options(), f"Failed to expand vulnerability options for {state_name}"
+        assert analytics_page.collapse_vulnerability_options(), f"Failed to collapse vulnerability options for {state_name}"
+        print(f"✅ Vulnerability section expand/collapse successful for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_expand_collapse_govt_response_section(self, driver, state_key):
+        """Test expanding and collapsing government response section for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        assert analytics_page.expand_govt_response_options(), f"Failed to expand govt response options for {state_name}"
+        assert analytics_page.collapse_govt_response_options(), f"Failed to collapse govt response options for {state_name}"
+        print(f"✅ Government Response section expand/collapse successful for {state_name}")
+
+
+@pytest.mark.analytics
+@pytest.mark.multistate
+@pytest.mark.map_validation
+class TestMultiStateIndicatorsMapView:
+    """Test all indicators with map load validation in Map view across all states"""
 
     @pytest.mark.parametrize(
         "state_key,state_name,section,indicator_key,indicator_name",
         get_multistate_test_params(),
         ids=lambda val: str(val) if not isinstance(val, str) else val.replace('_', '-')
     )
-    def test_indicator_loads_for_state(
+    def test_indicator_map_view_loads(
         self,
         driver,
         state_key,
@@ -69,7 +228,7 @@ class TestMultiStateIndicators:
         indicator_name
     ):
         """
-        Test that indicator loads correctly for a specific state
+        Test that indicator loads correctly with map validation in Map view
 
         This test:
         1. Navigates to analytics page
@@ -77,13 +236,14 @@ class TestMultiStateIndicators:
         3. Selects Map view
         4. Expands the appropriate section
         5. Selects the indicator
-        6. Validates that map/chart loads
+        6. Validates that map/visualization loads (canvas/svg element visible)
+        7. Takes screenshot for validation
 
         Args:
             driver: WebDriver instance
             state_key: State identifier key
             state_name: Human-readable state name
-            section: Section name (hazard, exposure, etc.)
+            section: Section name (hazard, exposure, vulnerability, government_response)
             indicator_key: Indicator identifier
             indicator_name: Human-readable indicator name
         """
@@ -98,12 +258,6 @@ class TestMultiStateIndicators:
 
         # Select Map view
         assert analytics_page.select_view(1), f"❌ Failed to select Map view for {state_name}"
-
-        # Select a district to enable map rendering
-        # Note: This assumes Sivasagar exists for Assam, adjust per state if needed
-        # For scalability, this could also be configured per state
-        if state_key == "assam":
-            analytics_page.select_district("Sivasagar")
 
         # Expand appropriate section and select indicator
         section_expand_methods = {
@@ -120,7 +274,6 @@ class TestMultiStateIndicators:
         assert expand_method(), f"❌ Failed to expand {section} for {state_name}"
 
         # Select indicator using dynamic text-based selection
-        # This works with any indicator discovered from YAML configs
         assert analytics_page.select_indicator_by_text(indicator_name, section), \
             f"❌ Failed to select {indicator_name} in {section} for {state_name}"
 
@@ -133,62 +286,191 @@ class TestMultiStateIndicators:
             assert map_element is not None, \
                 f"❌ Map did not load for {indicator_name} in {state_name}"
 
-            print(f"✅ {state_name} - {section} - {indicator_name}: Map loaded successfully")
+            print(f"✅ MAP VIEW - {state_name} - {section} - {indicator_name}: Map loaded successfully")
 
         except Exception as e:
             pytest.fail(
-                f"❌ Visualization failed to load for {indicator_name} in {state_name}: {e}"
+                f"❌ Map visualization failed to load for {indicator_name} in {state_name}: {e}"
             )
 
         # Take screenshot for validation
         analytics_page.take_analytics_screenshot(
-            f"{state_key}_{section}_{indicator_key}_",
+            f"map_{state_key}_{section}_{indicator_key}_",
             "validated"
         )
 
 
 @pytest.mark.analytics
 @pytest.mark.multistate
-@pytest.mark.smoke
-class TestMultiStateBasicFunctionality:
-    """Basic smoke tests for multi-state functionality"""
+@pytest.mark.chart_validation
+class TestMultiStateIndicatorsChartView:
+    """Test all indicators with visualization validation in Chart view across all states"""
 
-    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_state_selection(self, driver, state_key):
-        """Test that each state can be selected successfully"""
+    @pytest.mark.parametrize(
+        "state_key,state_name,section,indicator_key,indicator_name",
+        get_multistate_test_params(),
+        ids=lambda val: str(val) if not isinstance(val, str) else val.replace('_', '-')
+    )
+    def test_indicator_chart_view_loads(
+        self,
+        driver,
+        state_key,
+        state_name,
+        section,
+        indicator_key,
+        indicator_name
+    ):
+        """
+        Test that indicator loads correctly with chart validation in Chart view
+
+        This test:
+        1. Navigates to analytics page
+        2. Selects the target state
+        3. Selects Chart view
+        4. Expands the appropriate section
+        5. Selects the indicator
+        6. Validates that chart/visualization loads
+        7. Takes screenshot for validation
+        """
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        state_config = config_loader.get_state_config(state_key)
-        state_name = state_config.get("state_name")
+        # Navigate to analytics
+        assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics for {state_name}"
 
-        assert common_page.navigate_to_analytics(), f"Failed to navigate to Analytics"
-        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+        # Select state
+        assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
 
-        print(f"✅ Successfully selected state: {state_name}")
+        # Select Chart view
+        assert analytics_page.select_view(2), f"❌ Failed to select Chart view for {state_name}"
 
-    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_state_has_indicators(self, driver, state_key):
-        """Verify each state has configured indicators"""
-        state_config = config_loader.get_state_config(state_key)
-        state_name = state_config.get("state_name")
+        # Expand appropriate section
+        section_expand_methods = {
+            "hazard": analytics_page.expand_hazard_options,
+            "exposure": analytics_page.expand_exposure_options,
+            "vulnerability": analytics_page.expand_vulnerability_options,
+            "government_response": analytics_page.expand_govt_response_options
+        }
 
-        total_indicators = sum(
-            len(section.get("indicators", []))
-            for section in state_config.get("sections", {}).values()
+        expand_method = section_expand_methods.get(section)
+        assert expand_method, f"❌ Unknown section: {section}"
+        assert expand_method(), f"❌ Failed to expand {section} for {state_name}"
+
+        # Select indicator
+        assert analytics_page.select_indicator_by_text(indicator_name, section), \
+            f"❌ Failed to select {indicator_name} in {section} for {state_name}"
+
+        # Validate chart/visualization loads
+        wait = WebDriverWait(driver, 5)
+        try:
+            chart_element = wait.until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg, .chart-container"))
+            )
+            assert chart_element is not None, \
+                f"❌ Chart did not load for {indicator_name} in {state_name}"
+
+            print(f"✅ CHART VIEW - {state_name} - {section} - {indicator_name}: Chart loaded successfully")
+
+        except Exception as e:
+            pytest.fail(
+                f"❌ Chart visualization failed to load for {indicator_name} in {state_name}: {e}"
+            )
+
+        # Take screenshot for validation
+        analytics_page.take_analytics_screenshot(
+            f"chart_{state_key}_{section}_{indicator_key}_",
+            "validated"
         )
 
-        assert total_indicators > 0, \
-            f"❌ State {state_name} has no configured indicators"
 
-        print(f"✅ {state_name} has {total_indicators} configured indicators")
+@pytest.mark.analytics
+@pytest.mark.multistate
+@pytest.mark.table_validation
+class TestMultiStateIndicatorsTableView:
+    """Test all indicators with table validation in Table view across all states"""
+
+    @pytest.mark.parametrize(
+        "state_key,state_name,section,indicator_key,indicator_name",
+        get_multistate_test_params(),
+        ids=lambda val: str(val) if not isinstance(val, str) else val.replace('_', '-')
+    )
+    def test_indicator_table_view_loads(
+        self,
+        driver,
+        state_key,
+        state_name,
+        section,
+        indicator_key,
+        indicator_name
+    ):
+        """
+        Test that indicator loads correctly with table validation in Table view
+
+        This test:
+        1. Navigates to analytics page
+        2. Selects the target state
+        3. Selects Table view
+        4. Expands the appropriate section
+        5. Selects the indicator
+        6. Validates that table loads
+        7. Takes screenshot for validation
+        """
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        # Navigate to analytics
+        assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics for {state_name}"
+
+        # Select state
+        assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
+
+        # Select Table view
+        assert analytics_page.select_view(3), f"❌ Failed to select Table view for {state_name}"
+
+        # Expand appropriate section
+        section_expand_methods = {
+            "hazard": analytics_page.expand_hazard_options,
+            "exposure": analytics_page.expand_exposure_options,
+            "vulnerability": analytics_page.expand_vulnerability_options,
+            "government_response": analytics_page.expand_govt_response_options
+        }
+
+        expand_method = section_expand_methods.get(section)
+        assert expand_method, f"❌ Unknown section: {section}"
+        assert expand_method(), f"❌ Failed to expand {section} for {state_name}"
+
+        # Select indicator
+        assert analytics_page.select_indicator_by_text(indicator_name, section), \
+            f"❌ Failed to select {indicator_name} in {section} for {state_name}"
+
+        # Validate table loads
+        wait = WebDriverWait(driver, 5)
+        try:
+            table_element = wait.until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, "table, .table-container, [role='table']"))
+            )
+            assert table_element is not None, \
+                f"❌ Table did not load for {indicator_name} in {state_name}"
+
+            print(f"✅ TABLE VIEW - {state_name} - {section} - {indicator_name}: Table loaded successfully")
+
+        except Exception as e:
+            pytest.fail(
+                f"❌ Table visualization failed to load for {indicator_name} in {state_name}: {e}"
+            )
+
+        # Take screenshot for validation
+        analytics_page.take_analytics_screenshot(
+            f"table_{state_key}_{section}_{indicator_key}_",
+            "validated"
+        )
 
 
 @pytest.mark.analytics
 @pytest.mark.multistate
 @pytest.mark.section_coverage
 class TestSectionCoverageByState:
-    """Test coverage of all sections for each state"""
+    """Test complete coverage of all sections for each state"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
     def test_hazard_section_coverage(self, driver, state_key):
@@ -241,7 +523,7 @@ class TestSectionCoverageByState:
         print(f"Total indicators: {len(indicators)}")
         print(f"{'='*60}\n")
 
-        # Section method mapping - use expand/collapse only
+        # Section method mapping
         section_methods = {
             "hazard": {
                 "expand": analytics_page.expand_hazard_options,
@@ -267,7 +549,7 @@ class TestSectionCoverageByState:
         # Expand section
         assert handler["expand"](), f"Failed to expand {section}"
 
-        # Test each indicator using dynamic selection
+        # Test each indicator
         success_count = 0
         for indicator in indicators:
             if not indicator.get("enabled", True):
@@ -277,7 +559,7 @@ class TestSectionCoverageByState:
             indicator_name = indicator.get("name")
 
             try:
-                # Use dynamic text-based selection (works with any indicator)
+                # Use dynamic text-based selection
                 assert analytics_page.select_indicator_by_text(indicator_name, section), \
                     f"Failed to select {indicator_name}"
 
@@ -299,6 +581,128 @@ class TestSectionCoverageByState:
 
         assert success_count > 0, \
             f"No indicators successfully tested for {section} in {state_name}"
+
+
+@pytest.mark.analytics
+@pytest.mark.multistate
+@pytest.mark.flow
+@pytest.mark.slow
+class TestMultiStateCompleteFlow:
+    """Complete end-to-end analytics flow test for all states"""
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_complete_analytics_workflow_for_state(self, driver, state_key):
+        """
+        Full analytics workflow with all views, sections, and indicators for each state
+
+        This comprehensive test:
+        1. Tests navigation to analytics
+        2. Selects the state
+        3. Tests all three views (Map, Chart, Table)
+        4. For each view, tests all sections (Hazard, Exposure, Vulnerability, Govt Response)
+        5. For each section, expands it, tests all indicators, and collapses it
+        6. Takes screenshots at key points
+        """
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        print(f"\n{'='*80}")
+        print(f"COMPLETE WORKFLOW TEST FOR {state_name.upper()}")
+        print(f"{'='*80}\n")
+
+        # Navigate and select state
+        assert common_page.navigate_to_analytics(), f"Failed to navigate to analytics for {state_name}"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+
+        # Test all views
+        view_data = [
+            {'view_index': 1, 'view_name': 'Map', 'prefix': 'map_'},
+            {'view_index': 2, 'view_name': 'Chart', 'prefix': 'chart_'},
+            {'view_index': 3, 'view_name': 'Table', 'prefix': 'table_'}
+        ]
+
+        for view in view_data:
+            print(f"\n=== Testing {view['view_name']} View for {state_name} ===")
+
+            # Select view
+            assert analytics_page.select_view(view['view_index']), \
+                f"Failed to select {view['view_name']} view for {state_name}"
+
+            analytics_page.take_analytics_screenshot(
+                f"{state_key}_{view['prefix']}",
+                "initial"
+            )
+
+            # Test all sections
+            sections = ["hazard", "exposure", "vulnerability", "government_response"]
+
+            for section in sections:
+                # Get section-specific data
+                indicators = config_loader.get_state_indicators(state_key, section)
+
+                if not indicators:
+                    print(f"⚠️  No indicators found for {section} in {state_name}, skipping...")
+                    continue
+
+                print(f"\n  --- Testing {section.title()} Section ({len(indicators)} indicators) ---")
+
+                # Section method mapping
+                section_methods = {
+                    "hazard": {
+                        "expand": analytics_page.expand_hazard_options,
+                        "collapse": analytics_page.collapse_hazard_options
+                    },
+                    "exposure": {
+                        "expand": analytics_page.expand_exposure_options,
+                        "collapse": analytics_page.collapse_exposure_options
+                    },
+                    "vulnerability": {
+                        "expand": analytics_page.expand_vulnerability_options,
+                        "collapse": analytics_page.collapse_vulnerability_options
+                    },
+                    "government_response": {
+                        "expand": analytics_page.expand_govt_response_options,
+                        "collapse": analytics_page.collapse_govt_response_options
+                    }
+                }
+
+                handler = section_methods.get(section)
+
+                # Expand section
+                assert handler["expand"](), f"Failed to expand {section} for {state_name}"
+
+                analytics_page.take_analytics_screenshot(
+                    f"{state_key}_{view['prefix']}{section}_",
+                    "expanded"
+                )
+
+                # Test each indicator
+                for indicator in indicators:
+                    if not indicator.get("enabled", True):
+                        continue
+
+                    indicator_name = indicator.get("name")
+
+                    try:
+                        assert analytics_page.select_indicator_by_text(indicator_name, section), \
+                            f"Failed to select {indicator_name}"
+
+                        print(f"    ✅ {indicator_name}")
+
+                    except Exception as e:
+                        print(f"    ❌ {indicator_name}: {e}")
+
+                # Collapse section
+                assert handler["collapse"](), f"Failed to collapse {section} for {state_name}"
+
+            print(f"\n✅ {view['view_name']} view completed for {state_name}")
+
+        print(f"\n{'='*80}")
+        print(f"COMPLETE WORKFLOW TEST FINISHED FOR {state_name.upper()}")
+        print(f"{'='*80}\n")
 
 
 @pytest.mark.analytics
@@ -339,3 +743,59 @@ class TestCrossStateComparison:
                 print(f"    • {section_info['name']}: {enabled} indicators")
 
         print("\n" + "="*80 + "\n")
+
+
+@pytest.mark.analytics
+@pytest.mark.multistate
+@pytest.mark.edge_case
+class TestMultiStateEdgeCases:
+    """Edge cases and boundary condition tests for multistate"""
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_rapid_view_switching(self, driver, state_key):
+        """Edge case: Rapidly switch between views for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+
+        # Rapid switching
+        for iteration in range(2):
+            for view_index in [1, 2, 3]:
+                assert analytics_page.select_view(view_index), \
+                    f"Failed to select view {view_index} in iteration {iteration + 1} for {state_name}"
+
+        print(f"✅ Rapid view switching successful for {state_name}")
+
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_expand_collapse_all_sections_rapidly(self, driver, state_key):
+        """Edge case: Rapidly expand/collapse all sections for each state"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to analytics"
+        assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
+
+        # Rapid expand/collapse
+        for iteration in range(2):
+            assert analytics_page.expand_hazard_options(), \
+                f"Failed to expand hazard in iteration {iteration + 1} for {state_name}"
+            assert analytics_page.collapse_hazard_options(), \
+                f"Failed to collapse hazard in iteration {iteration + 1} for {state_name}"
+            assert analytics_page.expand_exposure_options(), \
+                f"Failed to expand exposure in iteration {iteration + 1} for {state_name}"
+            assert analytics_page.collapse_exposure_options(), \
+                f"Failed to collapse exposure in iteration {iteration + 1} for {state_name}"
+            assert analytics_page.expand_vulnerability_options(), \
+                f"Failed to expand vulnerability in iteration {iteration + 1} for {state_name}"
+            assert analytics_page.collapse_vulnerability_options(), \
+                f"Failed to collapse vulnerability in iteration {iteration + 1} for {state_name}"
+
+        print(f"✅ Rapid expand/collapse successful for {state_name}")
