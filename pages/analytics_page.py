@@ -18,7 +18,7 @@ class AnalyticsPage(BasePage):
 
     def select_state(self, state_name):
         """
-        Select a state from the <select> dropdown
+        Select a state from the sidebar - handles both dropdown and list item approaches
 
         Args:
             state_name: Name of the state to select (e.g., "Assam", "Himachal pradesh")
@@ -29,43 +29,109 @@ class AnalyticsPage(BasePage):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait, Select
         from selenium.webdriver.support import expected_conditions as EC
-        from selenium.common.exceptions import NoSuchElementException
+        from selenium.common.exceptions import (
+            NoSuchElementException,
+            StaleElementReferenceException,
+            ElementNotInteractableException,
+            TimeoutException
+        )
         import time
 
-        try:
-            # Find the state select dropdown
-            wait = WebDriverWait(self.driver, 10)
-            select_element = wait.until(
-                EC.presence_of_element_located((By.NAME, "State"))
-            )
+        max_retries = 3
 
-            # Create Select object
-            select = Select(select_element)
-
-            # Select by visible text
+        for attempt in range(max_retries):
             try:
-                select.select_by_visible_text(state_name)
-                print(f"✅ Selected state: {state_name}")
-            except NoSuchElementException:
-                # Try case-insensitive match
-                print(f"⚠️  Exact match failed, trying case-insensitive match...")
-                options = select.options
-                for option in options:
-                    if option.text.strip().lower() == state_name.lower():
-                        select.select_by_visible_text(option.text.strip())
-                        print(f"✅ Selected state: {option.text.strip()}")
-                        break
+                wait = WebDriverWait(self.driver, 10)
+
+                # APPROACH 1: Try to find <select> dropdown with name="State"
+                try:
+                    select_element = wait.until(
+                        EC.presence_of_element_located((By.NAME, "State"))
+                    )
+                    time.sleep(0.5)
+
+                    select = Select(select_element)
+                    available_options = [opt.text.strip() for opt in select.options]
+                    print(f"📋 Found <select> dropdown with states: {', '.join(available_options[:5])}...")
+
+                    # Try exact match first
+                    selected = False
+                    try:
+                        select.select_by_visible_text(state_name)
+                        selected = True
+                        print(f"✅ Selected state: {state_name}")
+                    except NoSuchElementException:
+                        # Try case-insensitive match
+                        for option in select.options:
+                            if option.text.strip().lower() == state_name.lower():
+                                select.select_by_visible_text(option.text.strip())
+                                selected = True
+                                print(f"✅ Selected state: {option.text.strip()}")
+                                break
+
+                    if selected:
+                        time.sleep(2)  # Wait for page update
+                        return True
+                    else:
+                        print(f"❌ State '{state_name}' not found in dropdown options: {available_options}")
+                        return False
+
+                except TimeoutException:
+                    # APPROACH 2: Fallback to sidebar list item approach
+                    print(f"⚠️  <select> dropdown not found, trying sidebar list item approach...")
+
+                    # Use case-insensitive XPath for sidebar list items
+                    state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
+
+                    state_element = wait.until(
+                        EC.presence_of_element_located((By.XPATH, state_xpath))
+                    )
+
+                    # Scroll into view
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
+                    time.sleep(0.5)
+
+                    # Click the state
+                    success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
+                    if success:
+                        time.sleep(2)  # Wait for state change and page reload
+                        print(f"✅ Selected state: {state_name}")
+                        return True
+                    else:
+                        self._capture_failure_screenshot(f"state_click_failed_{state_name}")
+                        return False
+
+            except (StaleElementReferenceException, ElementNotInteractableException) as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  State selection failed ({type(e).__name__}), retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
                 else:
-                    print(f"❌ Could not find state: {state_name}")
+                    print(f"❌ Failed to select state {state_name} after {max_retries} attempts: {e}")
+                    self._capture_failure_screenshot(f"state_selection_error_{state_name}")
+                    return False
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
+                    print(f"⚠️  Retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed to select state {state_name}: {type(e).__name__}: {e}")
+                    self._capture_failure_screenshot(f"state_selection_exception_{state_name}")
                     return False
 
-            # Wait for page to update after state selection
-            time.sleep(2)
-            return True
+        return False
 
+    def _capture_failure_screenshot(self, filename):
+        """Capture screenshot on failure for debugging"""
+        try:
+            import os
+            screenshot_path = os.path.join(self.screenshot_dir, f"{filename}.png")
+            self.driver.save_screenshot(screenshot_path)
+            print(f"📸 Failure screenshot saved: {screenshot_path}")
         except Exception as e:
-            print(f"❌ Failed to select state {state_name}: {e}")
-            return False
+            print(f"⚠️  Could not save failure screenshot: {e}")
 
     def get_current_state(self):
         """
@@ -99,6 +165,9 @@ class AnalyticsPage(BasePage):
         Returns:
             bool: Success status (False if invalid index)
         """
+        from selenium.common.exceptions import StaleElementReferenceException
+        import time
+
         # Validate view_index
         if view_index not in [1, 2, 3]:
             print(f"❌ Invalid view index: {view_index}. Must be 1, 2, or 3")
@@ -106,7 +175,24 @@ class AnalyticsPage(BasePage):
 
         locator = AnalyticsPageLocators.get_view_button(view_index)
         view_names = {1: "Map View", 2: "Chart View", 3: "Table View"}
-        return self.click(locator, view_names.get(view_index, f"View {view_index}"))
+
+        # Retry logic for stale elements
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                result = self.click(locator, view_names.get(view_index, f"View {view_index}"))
+                if result:
+                    return True
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Stale element encountered, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed after {max_retries} attempts due to stale elements")
+                    return False
+
+        return False
 
     def select_district(self, district_name):
         """Select district from dropdown"""
@@ -160,14 +246,28 @@ class AnalyticsPage(BasePage):
 
     # Hazard Section Methods
     def expand_hazard_options(self, screenshot_prefix=None):
-        """Expand Hazard options section"""
-        if self.interact_with_option(
-            HazardLocators.EXPAND_COLLAPSE,
-            "Hazard Options",
-            f"{screenshot_prefix}hazard_show_options" if screenshot_prefix else None,
-            self.screenshot_dir
-        ):
-            return True
+        """Expand Hazard options section with stale element handling"""
+        from selenium.common.exceptions import StaleElementReferenceException
+        import time
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                result = self.interact_with_option(
+                    HazardLocators.EXPAND_COLLAPSE,
+                    "Hazard Options",
+                    f"{screenshot_prefix}hazard_show_options" if screenshot_prefix else None,
+                    self.screenshot_dir
+                )
+                if result:
+                    return True
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Stale element in expand_hazard_options, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    return False
         return False
 
     def collapse_hazard_options(self):
@@ -209,19 +309,31 @@ class AnalyticsPage(BasePage):
         import time
 
         try:
-            # Find label with matching aria-label or text
-            # Try aria-label first (most reliable)
-            label_xpath = f"//label[@aria-label='{indicator_text}']"
-
             wait = WebDriverWait(self.driver, 10)
+
+            # Fix XPath injection for indicators with apostrophes by using concat
+            # If indicator_text contains apostrophes, we need to escape them properly
+            if "'" in indicator_text:
+                # Split on apostrophes and use concat to build the XPath string
+                parts = indicator_text.split("'")
+                xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
+                label_xpath = f"//label[@aria-label={xpath_string}]"
+            else:
+                label_xpath = f"//label[@aria-label='{indicator_text}']"
 
             try:
                 label_element = wait.until(
                     EC.element_to_be_clickable((By.XPATH, label_xpath))
                 )
             except:
-                # Fallback: try finding by visible text in span
-                label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+                # Fallback: try finding by visible text in span with proper apostrophe handling
+                if "'" in indicator_text:
+                    parts = indicator_text.split("'")
+                    xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
+                    label_xpath = f"//label[.//span[normalize-space()={xpath_string}]]"
+                else:
+                    label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+
                 label_element = wait.until(
                     EC.element_to_be_clickable((By.XPATH, label_xpath))
                 )
@@ -273,13 +385,29 @@ class AnalyticsPage(BasePage):
 
     # Exposure Section Methods
     def expand_exposure_options(self, screenshot_prefix=None):
-        """Expand Exposure options section"""
-        return self.interact_with_option(
-            ExposureLocators.EXPAND_COLLAPSE,
-            "Exposure Options",
-            f"{screenshot_prefix}exposure_show_options" if screenshot_prefix else None,
-            self.screenshot_dir
-        )
+        """Expand Exposure options section with stale element handling"""
+        from selenium.common.exceptions import StaleElementReferenceException
+        import time
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                result = self.interact_with_option(
+                    ExposureLocators.EXPAND_COLLAPSE,
+                    "Exposure Options",
+                    f"{screenshot_prefix}exposure_show_options" if screenshot_prefix else None,
+                    self.screenshot_dir
+                )
+                if result:
+                    return True
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Stale element in expand_exposure_options, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    return False
+        return False
 
     def collapse_exposure_options(self):
         """Collapse Exposure options section"""
@@ -330,13 +458,29 @@ class AnalyticsPage(BasePage):
 
     # Vulnerability Section Methods
     def expand_vulnerability_options(self, screenshot_prefix=None):
-        """Expand Vulnerability options section"""
-        return self.interact_with_option(
-            VulnerabilityLocators.EXPAND_COLLAPSE,
-            "Vulnerability Options",
-            f"{screenshot_prefix}vulnerability_show_options" if screenshot_prefix else None,
-            self.screenshot_dir
-        )
+        """Expand Vulnerability options section with stale element handling"""
+        from selenium.common.exceptions import StaleElementReferenceException
+        import time
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                result = self.interact_with_option(
+                    VulnerabilityLocators.EXPAND_COLLAPSE,
+                    "Vulnerability Options",
+                    f"{screenshot_prefix}vulnerability_show_options" if screenshot_prefix else None,
+                    self.screenshot_dir
+                )
+                if result:
+                    return True
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Stale element in expand_vulnerability_options, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    return False
+        return False
 
     def collapse_vulnerability_options(self):
         """Collapse Vulnerability options section"""

@@ -91,7 +91,7 @@ class BasePage:
 
     def click(self, locator, element_name="Element"):
         """
-        Click on an element with wait and error handling
+        Click on an element with wait, retry, and error handling
 
         Args:
             locator: Tuple of (By, selector)
@@ -100,18 +100,45 @@ class BasePage:
         Returns:
             bool: True if successful, False otherwise
         """
-        try:
-            element = self.find_clickable_element(locator)
-            if element:
-                element.click()
-                print(f"✅ {element_name} clicked successfully")
-                return True
-            else:
-                print(f"❌ {element_name} not found")
-                return False
-        except Exception as e:
-            print(f"❌ Error clicking {element_name}: {e}")
-            return False
+        from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException
+        import time
+
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                element = self.find_clickable_element(locator)
+                if element:
+                    try:
+                        element.click()
+                        print(f"✅ {element_name} clicked successfully")
+                        return True
+                    except (StaleElementReferenceException, ElementClickInterceptedException) as e:
+                        if attempt < max_retries - 1:
+                            print(f"⚠️  Click failed ({type(e).__name__}), retrying ({attempt + 1}/{max_retries})...")
+                            time.sleep(0.5)
+                            continue
+                        else:
+                            # Try JavaScript click as last resort
+                            try:
+                                self.driver.execute_script("arguments[0].click();", element)
+                                print(f"✅ {element_name} clicked successfully (JavaScript)")
+                                return True
+                            except:
+                                print(f"❌ Error clicking {element_name}: {e}")
+                                return False
+                else:
+                    print(f"❌ {element_name} not found")
+                    return False
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Error in click attempt {attempt + 1}: {e}, retrying...")
+                    time.sleep(0.5)
+                    continue
+                else:
+                    print(f"❌ Error clicking {element_name}: {e}")
+                    return False
+
+        return False
 
     def send_keys(self, locator, text, element_name="Input"):
         """
