@@ -27,15 +27,15 @@ class FooterLocators:
     """Locators for footer elements"""
 
     # Footer logos
-    IDS_DRR_LOGO = (By.XPATH, "//img[@alt='IDS-DRR logo']")
-    CDL_LOGO = (By.XPATH, "//img[@alt='CDL logo']")
-    OCP_LOGO = (By.XPATH, "//img[@alt='OCP logo']")
+    IDS_DRR_LOGO = (By.XPATH, "//body//main//footer//div//img[@alt='IDS-DRR Logo']")
+    CDL_LOGO = (By.XPATH, "//img[@alt='CivicDataLab Logo']")
+    OCP_LOGO = (By.XPATH, "//body//main//footer//div//div//img[@alt='OCP Logo']")
 
     # Partner logos
-    ROCKEFELLER_LOGO = (By.XPATH, "//img[@alt='Rockefeller Foundation']")
-    PJMF_LOGO = (By.XPATH, "//img[@alt='PJMF']")
-    ASDMA_LOGO = (By.XPATH, "//img[@alt='ASDMA']")
-    HPSDMA_LOGO = (By.XPATH, "//img[@alt='HPSDMA']")
+    ROCKEFELLER_LOGO = (By.XPATH, "//img[@alt='Rockefeller Logo']")
+    PJMF_LOGO = (By.XPATH, "//img[@alt='PJMF Logo']")
+    ASDMA_LOGO = (By.XPATH, "//img[@alt='ASDMA Logo']")
+    HPSDMA_LOGO = (By.XPATH, "//img[@alt='HPSDMA Logo']")
 
     # Social media
     SOCIAL_MEDIA_BUTTONS = (By.CLASS_NAME, "social-button")

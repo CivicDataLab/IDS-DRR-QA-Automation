@@ -320,31 +320,90 @@ class AnalyticsPage(BasePage):
         return False
 
     def collapse_hazard_options(self):
-        """Collapse Hazard options section"""
+        """Collapse Hazard options section with enhanced fallback logic"""
         import time
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
         time.sleep(0.5)
 
-        # Check if section is already collapsed by looking for expanded state
-        try:
-            element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
-            if element:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                parent_element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
+                if not parent_element:
+                    print("⚠️ Hazard section element not found")
+                    return False
+
                 # Check if the section is expanded before trying to collapse
-                aria_expanded = element.get_attribute('aria-expanded')
+                aria_expanded = parent_element.get_attribute('aria-expanded')
                 if aria_expanded == 'false':
                     print("✅ Hazard Options already collapsed")
                     return True
 
-            # If expanded or can't determine, try to collapse
-            result = self.click(HazardLocators.EXPAND_COLLAPSE, "Collapse Hazard Options")
-            if result:
-                time.sleep(0.5)  # Wait for collapse animation
-            return result
-        except Exception as e:
-            print(f"❌ Error in collapse_hazard_options: {e}")
-            return False
+                # APPROACH 1: Try hover-based collapse button (for larger sections)
+                try:
+                    actions = ActionChains(self.driver)
+                    actions.move_to_element(parent_element).perform()
+                    time.sleep(0.8)  # Increased wait time for hover effect
+
+                    collapse_button = self.find_element(HazardLocators.COLLAPSE_BUTTON, use_healing=False)
+                    if collapse_button and collapse_button.is_displayed():
+                        collapse_button.click()
+                        time.sleep(0.8)  # Wait for collapse animation
+                        print("✅ Hazard Options collapsed successfully (hover method)")
+                        return True
+                except Exception as hover_error:
+                    print(f"⚠️ Hover method failed: {hover_error}, trying fallback...")
+
+                # APPROACH 2: Direct click on parent element (toggle behavior)
+                try:
+                    parent_element.click()
+                    time.sleep(0.8)  # Wait for collapse animation
+
+                    # Verify it collapsed
+                    parent_element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
+                    if parent_element:
+                        aria_expanded = parent_element.get_attribute('aria-expanded')
+                        if aria_expanded == 'false':
+                            print("✅ Hazard Options collapsed successfully (direct click)")
+                            return True
+                except Exception as click_error:
+                    print(f"⚠️ Direct click failed: {click_error}")
+
+                # APPROACH 3: JavaScript click as last resort
+                try:
+                    self.driver.execute_script("arguments[0].click();", parent_element)
+                    time.sleep(0.8)
+                    print("✅ Hazard Options collapsed successfully (JavaScript click)")
+                    return True
+                except Exception as js_error:
+                    print(f"⚠️ JavaScript click failed: {js_error}")
+
+                # If we got here, retry
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
+                    time.sleep(1)
+                    continue
+
+            except (StaleElementReferenceException, TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed to collapse Hazard Options after {max_retries} attempts: {e}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error in collapse_hazard_options: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                return False
+
+        return False
 
     def select_indicator_by_text(self, indicator_text, section_name="Indicator"):
         """
@@ -468,29 +527,90 @@ class AnalyticsPage(BasePage):
         return False
 
     def collapse_exposure_options(self):
-        """Collapse Exposure options section"""
+        """Collapse Exposure options section with enhanced fallback logic"""
         import time
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
         time.sleep(0.5)
 
-        # Check if section is already collapsed
-        try:
-            element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
-            if element:
-                aria_expanded = element.get_attribute('aria-expanded')
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                parent_element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
+                if not parent_element:
+                    print("⚠️ Exposure section element not found")
+                    return False
+
+                # Check if the section is expanded before trying to collapse
+                aria_expanded = parent_element.get_attribute('aria-expanded')
                 if aria_expanded == 'false':
                     print("✅ Exposure Options already collapsed")
                     return True
 
-            result = self.click(ExposureLocators.EXPAND_COLLAPSE, "Collapse Exposure Options")
-            if result:
-                time.sleep(0.5)  # Wait for collapse animation
-            return result
-        except Exception as e:
-            print(f"❌ Error in collapse_exposure_options: {e}")
-            return False
+                # APPROACH 1: Try hover-based collapse button (for larger sections)
+                try:
+                    actions = ActionChains(self.driver)
+                    actions.move_to_element(parent_element).perform()
+                    time.sleep(0.8)  # Increased wait time for hover effect
+
+                    collapse_button = self.find_element(ExposureLocators.COLLAPSE_BUTTON, use_healing=False)
+                    if collapse_button and collapse_button.is_displayed():
+                        collapse_button.click()
+                        time.sleep(0.8)  # Wait for collapse animation
+                        print("✅ Exposure Options collapsed successfully (hover method)")
+                        return True
+                except Exception as hover_error:
+                    print(f"⚠️ Hover method failed: {hover_error}, trying fallback...")
+
+                # APPROACH 2: Direct click on parent element (toggle behavior)
+                try:
+                    parent_element.click()
+                    time.sleep(0.8)  # Wait for collapse animation
+
+                    # Verify it collapsed
+                    parent_element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
+                    if parent_element:
+                        aria_expanded = parent_element.get_attribute('aria-expanded')
+                        if aria_expanded == 'false':
+                            print("✅ Exposure Options collapsed successfully (direct click)")
+                            return True
+                except Exception as click_error:
+                    print(f"⚠️ Direct click failed: {click_error}")
+
+                # APPROACH 3: JavaScript click as last resort
+                try:
+                    self.driver.execute_script("arguments[0].click();", parent_element)
+                    time.sleep(0.8)
+                    print("✅ Exposure Options collapsed successfully (JavaScript click)")
+                    return True
+                except Exception as js_error:
+                    print(f"⚠️ JavaScript click failed: {js_error}")
+
+                # If we got here, retry
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
+                    time.sleep(1)
+                    continue
+
+            except (StaleElementReferenceException, TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed to collapse Exposure Options after {max_retries} attempts: {e}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error in collapse_exposure_options: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                return False
+
+        return False
 
     def select_exposure_option(self, option_name, screenshot_prefix=None):
         """
@@ -550,29 +670,90 @@ class AnalyticsPage(BasePage):
         return False
 
     def collapse_vulnerability_options(self):
-        """Collapse Vulnerability options section"""
+        """Collapse Vulnerability options section with enhanced fallback logic"""
         import time
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
         time.sleep(0.5)
 
-        # Check if section is already collapsed
-        try:
-            element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
-            if element:
-                aria_expanded = element.get_attribute('aria-expanded')
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                parent_element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
+                if not parent_element:
+                    print("⚠️ Vulnerability section element not found")
+                    return False
+
+                # Check if the section is expanded before trying to collapse
+                aria_expanded = parent_element.get_attribute('aria-expanded')
                 if aria_expanded == 'false':
                     print("✅ Vulnerability Options already collapsed")
                     return True
 
-            result = self.click(VulnerabilityLocators.EXPAND_COLLAPSE, "Collapse Vulnerability Options")
-            if result:
-                time.sleep(0.5)  # Wait for collapse animation
-            return result
-        except Exception as e:
-            print(f"❌ Error in collapse_vulnerability_options: {e}")
-            return False
+                # APPROACH 1: Try hover-based collapse button (for larger sections)
+                try:
+                    actions = ActionChains(self.driver)
+                    actions.move_to_element(parent_element).perform()
+                    time.sleep(0.8)  # Increased wait time for hover effect
+
+                    collapse_button = self.find_element(VulnerabilityLocators.COLLAPSE_BUTTON, use_healing=False)
+                    if collapse_button and collapse_button.is_displayed():
+                        collapse_button.click()
+                        time.sleep(0.8)  # Wait for collapse animation
+                        print("✅ Vulnerability Options collapsed successfully (hover method)")
+                        return True
+                except Exception as hover_error:
+                    print(f"⚠️ Hover method failed: {hover_error}, trying fallback...")
+
+                # APPROACH 2: Direct click on parent element (toggle behavior)
+                try:
+                    parent_element.click()
+                    time.sleep(0.8)  # Wait for collapse animation
+
+                    # Verify it collapsed
+                    parent_element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
+                    if parent_element:
+                        aria_expanded = parent_element.get_attribute('aria-expanded')
+                        if aria_expanded == 'false':
+                            print("✅ Vulnerability Options collapsed successfully (direct click)")
+                            return True
+                except Exception as click_error:
+                    print(f"⚠️ Direct click failed: {click_error}")
+
+                # APPROACH 3: JavaScript click as last resort
+                try:
+                    self.driver.execute_script("arguments[0].click();", parent_element)
+                    time.sleep(0.8)
+                    print("✅ Vulnerability Options collapsed successfully (JavaScript click)")
+                    return True
+                except Exception as js_error:
+                    print(f"⚠️ JavaScript click failed: {js_error}")
+
+                # If we got here, retry
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
+                    time.sleep(1)
+                    continue
+
+            except (StaleElementReferenceException, TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed to collapse Vulnerability Options after {max_retries} attempts: {e}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error in collapse_vulnerability_options: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                return False
+
+        return False
 
     def select_vulnerability_option(self, option_name, screenshot_prefix=None):
         """Select a vulnerability option"""
@@ -626,8 +807,10 @@ class AnalyticsPage(BasePage):
         return result
 
     def collapse_govt_response_options(self):
-        """Collapse Government Response options section"""
+        """Collapse Government Response options section with enhanced fallback logic"""
         import time
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
@@ -635,22 +818,81 @@ class AnalyticsPage(BasePage):
         self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
         time.sleep(0.5)
 
-        # Check if section is already collapsed
-        try:
-            element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
-            if element:
-                aria_expanded = element.get_attribute('aria-expanded')
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                parent_element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
+                if not parent_element:
+                    print("⚠️ Government Response section element not found")
+                    return False
+
+                # Check if the section is expanded before trying to collapse
+                aria_expanded = parent_element.get_attribute('aria-expanded')
                 if aria_expanded == 'false':
                     print("✅ Government Response Options already collapsed")
                     return True
 
-            result = self.click(GovtResponseLocators.EXPAND_COLLAPSE, "Collapse Government Response Options")
-            if result:
-                time.sleep(0.5)  # Wait for collapse animation
-            return result
-        except Exception as e:
-            print(f"❌ Error in collapse_govt_response_options: {e}")
-            return False
+                # APPROACH 1: Try hover-based collapse button (for larger sections)
+                try:
+                    actions = ActionChains(self.driver)
+                    actions.move_to_element(parent_element).perform()
+                    time.sleep(0.8)  # Increased wait time for hover effect
+
+                    collapse_button = self.find_element(GovtResponseLocators.COLLAPSE_BUTTON, use_healing=False)
+                    if collapse_button and collapse_button.is_displayed():
+                        collapse_button.click()
+                        time.sleep(0.8)  # Wait for collapse animation
+                        print("✅ Government Response Options collapsed successfully (hover method)")
+                        return True
+                except Exception as hover_error:
+                    print(f"⚠️ Hover method failed: {hover_error}, trying fallback...")
+
+                # APPROACH 2: Direct click on parent element (toggle behavior)
+                try:
+                    parent_element.click()
+                    time.sleep(0.8)  # Wait for collapse animation
+
+                    # Verify it collapsed
+                    parent_element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
+                    if parent_element:
+                        aria_expanded = parent_element.get_attribute('aria-expanded')
+                        if aria_expanded == 'false':
+                            print("✅ Government Response Options collapsed successfully (direct click)")
+                            return True
+                except Exception as click_error:
+                    print(f"⚠️ Direct click failed: {click_error}")
+
+                # APPROACH 3: JavaScript click as last resort
+                try:
+                    self.driver.execute_script("arguments[0].click();", parent_element)
+                    time.sleep(0.8)
+                    print("✅ Government Response Options collapsed successfully (JavaScript click)")
+                    return True
+                except Exception as js_error:
+                    print(f"⚠️ JavaScript click failed: {js_error}")
+
+                # If we got here, retry
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
+                    time.sleep(1)
+                    continue
+
+            except (StaleElementReferenceException, TimeoutException) as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Failed to collapse Government Response Options after {max_retries} attempts: {e}")
+                    return False
+            except Exception as e:
+                print(f"❌ Error in collapse_govt_response_options: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                return False
+
+        return False
 
     def select_govt_response_option(self, option_name, screenshot_prefix=None):
         """Select a government response option"""

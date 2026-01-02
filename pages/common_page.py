@@ -169,3 +169,24 @@ class CommonPage(BasePage):
         print(f"\nFooter Check Summary: {passed}/{total} elements visible")
 
         return results
+
+    def check_analytics_footer_elements(self):
+        """
+        Check visibility of analytics page footer elements
+        Analytics page footer only contains: IDS-DRR, CDL, and OCP logos
+        (Partner logos are not displayed on analytics page)
+
+        Returns:
+            dict: Results of all checks
+        """
+        results = {
+            'ids_drr_logo': self.is_footer_logo_visible('ids_drr'),
+            'cdl_logo': self.is_footer_logo_visible('cdl'),
+            'ocp_logo': self.is_footer_logo_visible('ocp')
+        }
+
+        passed = sum(results.values())
+        total = len(results)
+        print(f"\nAnalytics Footer Check Summary: {passed}/{total} logos visible")
+
+        return results

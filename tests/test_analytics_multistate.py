@@ -85,7 +85,8 @@ class TestMultiStateNavigation:
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
     def test_analytics_page_footer_visible(self, driver, state_key):
-        """Verify footer is visible on analytics page for each state"""
+        """Verify footer logos are visible on analytics page for each state
+        Analytics page footer contains only: IDS-DRR, CDL, and OCP logos"""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
@@ -94,8 +95,8 @@ class TestMultiStateNavigation:
 
         common_page.navigate_to_analytics()
         analytics_page.select_state(state_name)
-        footer_results = common_page.check_all_footer_elements()
-        assert all(footer_results.values()), f"Some footer elements not visible for {state_name}"
+        footer_results = common_page.check_analytics_footer_elements()
+        assert all(footer_results.values()), f"Some footer logos not visible for {state_name}: {footer_results}"
 
 
 @pytest.mark.analytics
