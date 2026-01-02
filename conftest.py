@@ -105,6 +105,34 @@ def driver_session():
     DriverFactory.quit_driver(driver)
 
 
+@pytest.fixture(scope="class")
+def driver_class(request):
+    """
+    WebDriver fixture shared across all tests in a class
+    Useful for multistate tests where all tests in a class use the same state
+    This significantly reduces browser instances and improves performance
+
+    Args:
+        request: Pytest request object
+
+    Yields:
+        WebDriver: Configured WebDriver instance shared across class
+    """
+    driver = DriverFactory.create_driver()
+    driver._healing_events = []
+    driver._test_name = request.node.nodeid
+
+    yield driver
+
+    # Collect healing events before quitting
+    if hasattr(driver, '_healing_events') and driver._healing_events:
+        plugin = request.config.pluginmanager.get_plugin("self_healing_plugin")
+        if plugin:
+            plugin.healing_events.extend(driver._healing_events)
+
+    DriverFactory.quit_driver(driver)
+
+
 @pytest.fixture(scope="function", autouse=True)
 def test_info(request):
     """Automatically capture and log test information"""
