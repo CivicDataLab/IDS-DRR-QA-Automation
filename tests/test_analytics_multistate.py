@@ -58,10 +58,10 @@ class TestMultiStateNavigation:
     """Analytics page navigation and accessibility tests for all states"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_navigate_to_analytics_from_homepage(self, driver_class, state_key):
+    def test_navigate_to_analytics_from_homepage(self, driver, state_key):
         """Verify analytics page is accessible from homepage for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -71,10 +71,10 @@ class TestMultiStateNavigation:
         print(f"✅ Analytics navigation successful for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_analytics_page_header_visible(self, driver_class, state_key):
+    def test_analytics_page_header_visible(self, driver, state_key):
         """Verify header is visible on analytics page for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -84,10 +84,10 @@ class TestMultiStateNavigation:
         assert common_page.is_header_logo_visible(), f"Header logo not visible on analytics page for {state_name}"
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_analytics_page_footer_visible(self, driver_class, state_key):
+    def test_analytics_page_footer_visible(self, driver, state_key):
         """Verify footer is visible on analytics page for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -109,10 +109,10 @@ class TestMultiStateViewToggle:
         (2, "Chart"),
         (3, "Table")
     ])
-    def test_select_view_for_state(self, driver_class, state_key, view_index, view_name):
+    def test_select_view_for_state(self, driver, state_key, view_index, view_name):
         """Test individual view selection for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -123,10 +123,10 @@ class TestMultiStateViewToggle:
         print(f"✅ {view_name} view selected successfully for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_toggle_between_all_views(self, driver_class, state_key):
+    def test_toggle_between_all_views(self, driver, state_key):
         """Test toggling between all three views for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -147,10 +147,10 @@ class TestMultiStateSectionExpandCollapse:
     """Tests for expanding and collapsing sections across all states"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_expand_collapse_hazard_section(self, driver_class, state_key):
+    def test_expand_collapse_hazard_section(self, driver, state_key):
         """Test expanding and collapsing hazard section for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -162,10 +162,10 @@ class TestMultiStateSectionExpandCollapse:
         print(f"✅ Hazard section expand/collapse successful for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_expand_collapse_exposure_section(self, driver_class, state_key):
+    def test_expand_collapse_exposure_section(self, driver, state_key):
         """Test expanding and collapsing exposure section for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -177,10 +177,10 @@ class TestMultiStateSectionExpandCollapse:
         print(f"✅ Exposure section expand/collapse successful for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_expand_collapse_vulnerability_section(self, driver_class, state_key):
+    def test_expand_collapse_vulnerability_section(self, driver, state_key):
         """Test expanding and collapsing vulnerability section for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -192,10 +192,10 @@ class TestMultiStateSectionExpandCollapse:
         print(f"✅ Vulnerability section expand/collapse successful for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_expand_collapse_govt_response_section(self, driver_class, state_key):
+    def test_expand_collapse_govt_response_section(self, driver, state_key):
         """Test expanding and collapsing government response section for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -247,8 +247,8 @@ class TestMultiStateIndicatorsMapView:
             indicator_key: Indicator identifier
             indicator_name: Human-readable indicator name
         """
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         # Navigate to analytics
         assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics for {state_name}"
@@ -357,8 +357,8 @@ class TestMultiStateIndicatorsChartView:
         6. Validates that chart/visualization loads
         7. Takes screenshot for validation
         """
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         # Navigate to analytics
         assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics for {state_name}"
@@ -465,8 +465,8 @@ class TestMultiStateIndicatorsTableView:
         6. Validates that table loads
         7. Takes screenshot for validation
         """
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         # Navigate to analytics
         assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics for {state_name}"
@@ -552,22 +552,22 @@ class TestSectionCoverageByState:
     """Test complete coverage of all sections for each state"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_hazard_section_coverage(self, driver_class, state_key):
+    def test_hazard_section_coverage(self, driver, state_key):
         """Test all hazard indicators for a specific state"""
         self._test_section_coverage(driver, state_key, "hazard")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_exposure_section_coverage(self, driver_class, state_key):
+    def test_exposure_section_coverage(self, driver, state_key):
         """Test all exposure indicators for a specific state"""
         self._test_section_coverage(driver, state_key, "exposure")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_vulnerability_section_coverage(self, driver_class, state_key):
+    def test_vulnerability_section_coverage(self, driver, state_key):
         """Test all vulnerability indicators for a specific state"""
         self._test_section_coverage(driver, state_key, "vulnerability")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_govt_response_section_coverage(self, driver_class, state_key):
+    def test_govt_response_section_coverage(self, driver, state_key):
         """Test all government response indicators for a specific state"""
         self._test_section_coverage(driver, state_key, "government_response")
 
@@ -580,8 +580,8 @@ class TestSectionCoverageByState:
             state_key: State identifier
             section: Section name
         """
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -670,7 +670,7 @@ class TestMultiStateCompleteFlow:
     """Complete end-to-end analytics flow test for all states"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_complete_analytics_workflow_for_state(self, driver_class, state_key):
+    def test_complete_analytics_workflow_for_state(self, driver, state_key):
         """
         Full analytics workflow with all views, sections, and indicators for each state
 
@@ -682,8 +682,8 @@ class TestMultiStateCompleteFlow:
         5. For each section, expands it, tests all indicators, and collapses it
         6. Takes screenshots at key points
         """
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -831,10 +831,10 @@ class TestMultiStateEdgeCases:
     """Edge cases and boundary condition tests for multistate"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_rapid_view_switching(self, driver_class, state_key):
+    def test_rapid_view_switching(self, driver, state_key):
         """Edge case: Rapidly switch between views for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
@@ -851,10 +851,10 @@ class TestMultiStateEdgeCases:
         print(f"✅ Rapid view switching successful for {state_name}")
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_expand_collapse_all_sections_rapidly(self, driver_class, state_key):
+    def test_expand_collapse_all_sections_rapidly(self, driver, state_key):
         """Edge case: Rapidly expand/collapse all sections for each state"""
-        common_page = CommonPage(driver_class)
-        analytics_page = AnalyticsPage(driver_class)
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
