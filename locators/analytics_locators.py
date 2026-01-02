@@ -30,8 +30,10 @@ class AnalyticsPageLocators:
 class HazardLocators:
     """Locators for Hazard section in Analytics"""
 
-    # Expand/Collapse
+    # Expand/Collapse - target the parent div that contains both expand and collapse states
     EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[1]/div/div/div[1]")
+    # Collapse button specifically (visible on hover) - targets the button with upward chevron
+    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[1]/div/div/div[1]//button[@type='button']")
 
     # Options
     TOTAL_MONTHLY_RAINFALL = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/span/div/label/span")
@@ -42,8 +44,10 @@ class HazardLocators:
 class ExposureLocators:
     """Locators for Exposure section in Analytics"""
 
-    # Expand/Collapse
+    # Expand/Collapse - target the parent div that contains both expand and collapse states
     EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div/div/div/div[1]")
+    # Collapse button specifically (visible on hover) - targets the button with upward chevron
+    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div/div/div/div[1]//button[@type='button']")
 
     # Options
     TOTAL_HOUSEHOLDS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]/div[1]/div/span/div/label/span")
@@ -55,8 +59,10 @@ class ExposureLocators:
 class VulnerabilityLocators:
     """Locators for Vulnerability section in Analytics"""
 
-    # Expand/Collapse
+    # Expand/Collapse - target the parent div that contains both expand and collapse states
     EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div/div/div/div[1]")
+    # Collapse button specifically (visible on hover) - targets the button with upward chevron
+    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div/div/div/div[1]//button[@type='button']")
 
     # Infrastructure Options
     HEALTH_CENTRES = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[1]/div/span/div/label/span")
@@ -82,8 +88,10 @@ class VulnerabilityLocators:
 class GovtResponseLocators:
     """Locators for Government Response section in Analytics"""
 
-    # Expand/Collapse
+    # Expand/Collapse - target the parent div that contains both expand and collapse states
     EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div/div/div/div[1]")
+    # Collapse button specifically (visible on hover) - targets the button with upward chevron
+    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div/div/div/div[1]//button[@type='button']")
 
     # Options
     FLOOD_TENDERS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[1]/div/span/div/label/span")
