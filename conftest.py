@@ -88,6 +88,14 @@ def driver(request):
         if plugin:
             plugin.healing_events.extend(driver._healing_events)
 
+    # Clear browser state before quitting to prevent interference
+    try:
+        driver.delete_all_cookies()
+        driver.execute_script("window.localStorage.clear();")
+        driver.execute_script("window.sessionStorage.clear();")
+    except:
+        pass  # Ignore errors during cleanup
+
     DriverFactory.quit_driver(driver)
 
 
