@@ -16,6 +16,39 @@ class AnalyticsPage(BasePage):
         super().__init__(driver)
         self.screenshot_dir = Config.ANALYTICS_SCREENSHOTS_DIR
 
+    def _wait_for_page_load_complete(self, timeout=30):
+        """Wait for page to complete loading - checks for loading spinners"""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.common.exceptions import TimeoutException
+        import time
+
+        try:
+            # Wait for common loading indicators to disappear
+            loading_selectors = [
+                "//div[contains(text(), 'Loading')]",
+                "//*[contains(@class, 'loading')]",
+                "//*[contains(@class, 'spinner')]",
+                "//div[contains(@class, 'loader')]"
+            ]
+
+            for selector in loading_selectors:
+                try:
+                    WebDriverWait(self.driver, 2).until_not(
+                        EC.presence_of_element_located((By.XPATH, selector))
+                    )
+                except TimeoutException:
+                    # Loading indicator not found or already gone
+                    pass
+
+            # Additional wait for DOM to be stable
+            time.sleep(1)
+            return True
+        except Exception as e:
+            print(f"⚠️  Warning during load wait: {e}")
+            return True  # Don't fail the test if we can't detect loading
+
     def select_state(self, state_name):
         """
         Select a state from the sidebar - handles both dropdown and list item approaches
@@ -37,11 +70,14 @@ class AnalyticsPage(BasePage):
         )
         import time
 
+        # First, wait for any existing page loads to complete
+        self._wait_for_page_load_complete()
+
         max_retries = 3
 
         for attempt in range(max_retries):
             try:
-                wait = WebDriverWait(self.driver, 10)
+                wait = WebDriverWait(self.driver, 15)
 
                 # APPROACH 1: Try to find <select> dropdown with name="State"
                 try:
@@ -53,6 +89,13 @@ class AnalyticsPage(BasePage):
                     select = Select(select_element)
                     available_options = [opt.text.strip() for opt in select.options]
                     print(f"📋 Found <select> dropdown with states: {', '.join(available_options[:5])}...")
+
+                    # Check if already selected
+                    current_selection = select.first_selected_option.text.strip()
+                    if current_selection.lower() == state_name.lower():
+                        print(f"ℹ️  State '{state_name}' is already selected, skipping re-selection")
+                        self._wait_for_page_load_complete()
+                        return True
 
                     # Try exact match first
                     selected = False
@@ -70,7 +113,8 @@ class AnalyticsPage(BasePage):
                                 break
 
                     if selected:
-                        time.sleep(2)  # Wait for page update
+                        # Wait for page to reload after state change
+                        self._wait_for_page_load_complete()
                         return True
                     else:
                         print(f"❌ State '{state_name}' not found in dropdown options: {available_options}")
@@ -94,7 +138,8 @@ class AnalyticsPage(BasePage):
                     # Click the state
                     success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
                     if success:
-                        time.sleep(2)  # Wait for state change and page reload
+                        # Wait for page to reload after state change
+                        self._wait_for_page_load_complete()
                         print(f"✅ Selected state: {state_name}")
                         return True
                     else:
@@ -104,7 +149,7 @@ class AnalyticsPage(BasePage):
             except (StaleElementReferenceException, ElementNotInteractableException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️  State selection failed ({type(e).__name__}), retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
+                    time.sleep(2)
                     continue
                 else:
                     print(f"❌ Failed to select state {state_name} after {max_retries} attempts: {e}")
@@ -114,7 +159,7 @@ class AnalyticsPage(BasePage):
                 if attempt < max_retries - 1:
                     print(f"⚠️  Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
                     print(f"⚠️  Retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
+                    time.sleep(2)
                     continue
                 else:
                     print(f"❌ Failed to select state {state_name}: {type(e).__name__}: {e}")
@@ -250,6 +295,9 @@ class AnalyticsPage(BasePage):
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
+
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -260,6 +308,7 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
+                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
@@ -273,7 +322,9 @@ class AnalyticsPage(BasePage):
     def collapse_hazard_options(self):
         """Collapse Hazard options section"""
         import time
-        # Add a small wait before attempting to collapse
+
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
         time.sleep(0.5)
 
         # Check if section is already collapsed by looking for expanded state
@@ -287,7 +338,10 @@ class AnalyticsPage(BasePage):
                     return True
 
             # If expanded or can't determine, try to collapse
-            return self.click(HazardLocators.EXPAND_COLLAPSE, "Collapse Hazard Options")
+            result = self.click(HazardLocators.EXPAND_COLLAPSE, "Collapse Hazard Options")
+            if result:
+                time.sleep(0.5)  # Wait for collapse animation
+            return result
         except Exception as e:
             print(f"❌ Error in collapse_hazard_options: {e}")
             return False
@@ -389,6 +443,9 @@ class AnalyticsPage(BasePage):
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
+
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -399,6 +456,7 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
+                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
@@ -412,7 +470,9 @@ class AnalyticsPage(BasePage):
     def collapse_exposure_options(self):
         """Collapse Exposure options section"""
         import time
-        # Add a small wait before attempting to collapse
+
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
         time.sleep(0.5)
 
         # Check if section is already collapsed
@@ -424,7 +484,10 @@ class AnalyticsPage(BasePage):
                     print("✅ Exposure Options already collapsed")
                     return True
 
-            return self.click(ExposureLocators.EXPAND_COLLAPSE, "Collapse Exposure Options")
+            result = self.click(ExposureLocators.EXPAND_COLLAPSE, "Collapse Exposure Options")
+            if result:
+                time.sleep(0.5)  # Wait for collapse animation
+            return result
         except Exception as e:
             print(f"❌ Error in collapse_exposure_options: {e}")
             return False
@@ -462,6 +525,9 @@ class AnalyticsPage(BasePage):
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
+
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -472,6 +538,7 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
+                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
@@ -485,7 +552,9 @@ class AnalyticsPage(BasePage):
     def collapse_vulnerability_options(self):
         """Collapse Vulnerability options section"""
         import time
-        # Add a small wait before attempting to collapse
+
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
         time.sleep(0.5)
 
         # Check if section is already collapsed
@@ -497,7 +566,10 @@ class AnalyticsPage(BasePage):
                     print("✅ Vulnerability Options already collapsed")
                     return True
 
-            return self.click(VulnerabilityLocators.EXPAND_COLLAPSE, "Collapse Vulnerability Options")
+            result = self.click(VulnerabilityLocators.EXPAND_COLLAPSE, "Collapse Vulnerability Options")
+            if result:
+                time.sleep(0.5)  # Wait for collapse animation
+            return result
         except Exception as e:
             print(f"❌ Error in collapse_vulnerability_options: {e}")
             return False
@@ -535,21 +607,32 @@ class AnalyticsPage(BasePage):
     # Government Response Section Methods
     def expand_govt_response_options(self, screenshot_prefix=None):
         """Expand Government Response options section"""
+        import time
+
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
+
         # Scroll to element first
         self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
 
-        return self.interact_with_option(
+        result = self.interact_with_option(
             GovtResponseLocators.EXPAND_COLLAPSE,
             "Government Response Options",
             f"{screenshot_prefix}govt_response_show_options" if screenshot_prefix else None,
             self.screenshot_dir
         )
+        if result:
+            time.sleep(0.5)  # Wait for expand animation
+        return result
 
     def collapse_govt_response_options(self):
         """Collapse Government Response options section"""
         import time
+
+        # Wait for page to be ready
+        self._wait_for_page_load_complete()
+
         self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
-        # Add a small wait before attempting to collapse
         time.sleep(0.5)
 
         # Check if section is already collapsed
@@ -561,7 +644,10 @@ class AnalyticsPage(BasePage):
                     print("✅ Government Response Options already collapsed")
                     return True
 
-            return self.click(GovtResponseLocators.EXPAND_COLLAPSE, "Collapse Government Response Options")
+            result = self.click(GovtResponseLocators.EXPAND_COLLAPSE, "Collapse Government Response Options")
+            if result:
+                time.sleep(0.5)  # Wait for collapse animation
+            return result
         except Exception as e:
             print(f"❌ Error in collapse_govt_response_options: {e}")
             return False
