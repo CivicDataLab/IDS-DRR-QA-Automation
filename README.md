@@ -122,8 +122,10 @@ HEADLESS=false
 
 ## Documentation
 
-- [QUICKSTART.md](QUICKSTART.md) - Quick setup guide
-- [SELF_HEALING_GUIDE.md](SELF_HEALING_GUIDE.md) - Complete reference
-- [EXAMPLES.md](EXAMPLES.md) - Usage examples
-- [REPORTS_GUIDE.md](REPORTS_GUIDE.md) - Report management
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) - Quick setup guide
+- [docs/SELF_HEALING_GUIDE.md](docs/SELF_HEALING_GUIDE.md) - Complete reference
+- [docs/EXAMPLES.md](docs/EXAMPLES.md) - Usage examples
+- [docs/REPORTS_GUIDE.md](docs/REPORTS_GUIDE.md) - Report management
+- [docs/MULTISTATE_QUICKSTART.md](docs/MULTISTATE_QUICKSTART.md) - Multi-state quick start
+- [docs/MULTISTATE_TESTING_GUIDE.md](docs/MULTISTATE_TESTING_GUIDE.md) - Multi-state testing guide
 - [.github/workflows/README.md](.github/workflows/README.md) - CI/CD setup
