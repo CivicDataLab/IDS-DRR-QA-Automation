@@ -94,8 +94,9 @@ element = driver.find_element(By.XPATH, "/html/body/div[1]/button")
 ```python
 class SelfHealingConfig:
     ENABLED = True
-    MAX_HEALING_ATTEMPTS = 5
+    MAX_HEALING_ATTEMPTS = 3  # Optimized for performance
     LEARNING_MODE = True
+    HEALING_TIMEOUT = 3       # 3 seconds per attempt
 ```
 
 **Pytest:** `pytest.ini`
@@ -126,4 +127,4 @@ pytest -n 2
 1. Read [SELF_HEALING_GUIDE.md](SELF_HEALING_GUIDE.md) for details
 2. Try different worker counts
 3. Check healing reports
-4. Set up [GitHub Actions](.github/workflows/README.md)
+4. Set up [GitHub Actions](../.github/workflows/README.md)
