@@ -16,6 +16,34 @@ class AnalyticsPage(BasePage):
         super().__init__(driver)
         self.screenshot_dir = Config.ANALYTICS_SCREENSHOTS_DIR
 
+    def is_error_page_displayed(self):
+        """
+        Check if the error page 'Something went wrong!' is displayed
+
+        Returns:
+            bool: True if error page is shown, False otherwise
+        """
+        from selenium.webdriver.common.by import By
+        try:
+            # Check for common error messages
+            error_indicators = [
+                "//h1[contains(text(), 'Something went wrong')]",
+                "//h2[contains(text(), 'Something went wrong')]",
+                "//div[contains(text(), 'Something went wrong')]",
+                "//button[contains(text(), 'Try again')]",
+                "//*[contains(@class, 'error-page')]",
+                "//*[contains(@class, 'error-boundary')]"
+            ]
+
+            for xpath in error_indicators:
+                elements = self.driver.find_elements(By.XPATH, xpath)
+                if elements and elements[0].is_displayed():
+                    return True
+
+            return False
+        except Exception:
+            return False
+
     def _wait_for_page_load_complete(self, timeout=30):
         """Wait for page to complete loading - checks for loading spinners"""
         from selenium.webdriver.common.by import By
@@ -240,7 +268,13 @@ class AnalyticsPage(BasePage):
         return False
 
     def select_district(self, district_name):
-        """Select district from dropdown"""
+        """Select district from dropdown with wait for element to be ready"""
+        import time
+
+        # Wait for page load to complete before interacting with district dropdown
+        self._wait_for_page_load_complete()
+        time.sleep(0.5)  # Additional buffer for dropdown to be interactable
+
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.DISTRICT_SELECT,
             district_name,
@@ -251,7 +285,13 @@ class AnalyticsPage(BasePage):
         return success
 
     def select_revenue_circle(self, revenue_circle_name):
-        """Select revenue circle from dropdown"""
+        """Select revenue circle from dropdown with wait for element to be ready"""
+        import time
+
+        # Wait for page load to complete before interacting with revenue circle dropdown
+        self._wait_for_page_load_complete()
+        time.sleep(0.5)  # Additional buffer for dropdown to be interactable
+
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.REVENUE_CIRCLE_SELECT,
             revenue_circle_name,
@@ -291,12 +331,23 @@ class AnalyticsPage(BasePage):
 
     # Hazard Section Methods
     def expand_hazard_options(self, screenshot_prefix=None):
-        """Expand Hazard options section with stale element handling"""
+        """Expand Hazard options section (only if not already expanded)"""
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
+
+        # Check if already expanded to avoid collapsing it
+        try:
+            parent_element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
+            if parent_element:
+                aria_expanded = parent_element.get_attribute('aria-expanded')
+                if aria_expanded == 'true':
+                    print("✅ Hazard section already expanded")
+                    return True
+        except Exception:
+            pass
 
         max_retries = 3
         for attempt in range(max_retries):
@@ -408,6 +459,7 @@ class AnalyticsPage(BasePage):
     def select_indicator_by_text(self, indicator_text, section_name="Indicator"):
         """
         Dynamically select an indicator by its text label (supports any indicator)
+        With retry logic for stale elements and dynamic DOM updates
 
         Args:
             indicator_text: The exact text of the indicator (e.g., "Total Monthly Rainfall")
@@ -419,56 +471,109 @@ class AnalyticsPage(BasePage):
         from selenium.webdriver.common.by import By
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
+        from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
         import time
 
-        try:
-            wait = WebDriverWait(self.driver, 10)
+        # Wait for page to stabilize
+        self._wait_for_page_load_complete()
+        time.sleep(0.5)
 
-            # Fix XPath injection for indicators with apostrophes by using concat
-            # If indicator_text contains apostrophes, we need to escape them properly
-            if "'" in indicator_text:
-                # Split on apostrophes and use concat to build the XPath string
-                parts = indicator_text.split("'")
-                xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                label_xpath = f"//label[@aria-label={xpath_string}]"
-            else:
-                label_xpath = f"//label[@aria-label='{indicator_text}']"
-
+        max_retries = 3
+        for attempt in range(max_retries):
             try:
-                label_element = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, label_xpath))
-                )
-            except:
-                # Fallback: try finding by visible text in span with proper apostrophe handling
+                wait = WebDriverWait(self.driver, 20)  # Increased timeout for parallel execution
+
+                # Fix XPath injection for indicators with apostrophes by using concat
+                # If indicator_text contains apostrophes, we need to escape them properly
                 if "'" in indicator_text:
+                    # Split on apostrophes and use concat to build the XPath string
                     parts = indicator_text.split("'")
                     xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                    label_xpath = f"//label[.//span[normalize-space()={xpath_string}]]"
+                    label_xpath = f"//label[@aria-label={xpath_string}]"
                 else:
-                    label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+                    label_xpath = f"//label[@aria-label='{indicator_text}']"
 
-                label_element = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, label_xpath))
-                )
+                try:
+                    label_element = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, label_xpath))
+                    )
+                except TimeoutException:
+                    # Fallback: try finding by visible text in span with proper apostrophe handling
+                    if "'" in indicator_text:
+                        parts = indicator_text.split("'")
+                        xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
+                        label_xpath = f"//label[.//span[normalize-space()={xpath_string}]]"
+                    else:
+                        label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
 
-            # Scroll into view
-            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", label_element)
-            time.sleep(0.3)
+                    label_element = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, label_xpath))
+                    )
 
-            # Click the label
-            try:
-                label_element.click()
-            except:
-                # JavaScript click fallback
-                self.driver.execute_script("arguments[0].click();", label_element)
+                # Scroll into view with retry for stale element
+                try:
+                    self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", label_element)
+                    time.sleep(0.3)
+                except StaleElementReferenceException:
+                    if attempt < max_retries - 1:
+                        print(f"⚠️  Stale element during scroll, retrying ({attempt + 1}/{max_retries})...")
+                        time.sleep(1)
+                        continue
 
-            print(f"✅ Selected indicator: {indicator_text}")
-            time.sleep(0.5)  # Wait for UI to update
-            return True
+                # Click the label with retry for stale element
+                try:
+                    label_element.click()
+                except StaleElementReferenceException:
+                    if attempt < max_retries - 1:
+                        print(f"⚠️  Stale element during click, retrying ({attempt + 1}/{max_retries})...")
+                        time.sleep(1)
+                        continue
+                    else:
+                        raise
+                except:
+                    # JavaScript click fallback
+                    self.driver.execute_script("arguments[0].click();", label_element)
 
-        except Exception as e:
-            print(f"❌ Failed to select indicator '{indicator_text}': {e}")
-            return False
+                print(f"✅ Selected indicator: {indicator_text}")
+                time.sleep(0.5)  # Wait for UI to update
+                return True
+
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Stale element in select_indicator, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ Indicator element remained stale after {max_retries} attempts")
+                    return False
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️  Error on attempt {attempt + 1}, retrying...")
+                    time.sleep(1)
+                    continue
+
+                print(f"❌ Failed to select indicator '{indicator_text}': {e}")
+                break  # Exit retry loop on final failure
+
+        # If we get here, all retries failed - show debug info
+        # DEBUG: Show what indicators ARE available
+        try:
+            available_indicators = self.driver.find_elements(By.XPATH, "//label[@aria-label]")
+            if available_indicators:
+                print(f"📋 Available indicators in UI ({len(available_indicators)}):")
+                for idx, label in enumerate(available_indicators[:15], 1):  # Show first 15
+                    aria_label = label.get_attribute('aria-label')
+                    if aria_label:
+                        print(f"   {idx}. {aria_label}")
+                if len(available_indicators) > 15:
+                    print(f"   ... and {len(available_indicators) - 15} more")
+            else:
+                print("⚠️  No indicators with aria-label found in UI")
+        except Exception as debug_err:
+            print(f"⚠️  Could not list available indicators: {debug_err}")
+
+        return False
 
     def select_hazard_option(self, option_name, screenshot_prefix=None):
         """
@@ -498,12 +603,23 @@ class AnalyticsPage(BasePage):
 
     # Exposure Section Methods
     def expand_exposure_options(self, screenshot_prefix=None):
-        """Expand Exposure options section with stale element handling"""
+        """Expand Exposure options section (only if not already expanded)"""
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
+
+        # Check if already expanded to avoid collapsing it
+        try:
+            parent_element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
+            if parent_element:
+                aria_expanded = parent_element.get_attribute('aria-expanded')
+                if aria_expanded == 'true':
+                    print("✅ Exposure section already expanded")
+                    return True
+        except Exception:
+            pass
 
         max_retries = 3
         for attempt in range(max_retries):
@@ -641,12 +757,23 @@ class AnalyticsPage(BasePage):
 
     # Vulnerability Section Methods
     def expand_vulnerability_options(self, screenshot_prefix=None):
-        """Expand Vulnerability options section with stale element handling"""
+        """Expand Vulnerability options section (only if not already expanded)"""
         from selenium.common.exceptions import StaleElementReferenceException
         import time
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
+
+        # Check if already expanded to avoid collapsing it
+        try:
+            parent_element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
+            if parent_element:
+                aria_expanded = parent_element.get_attribute('aria-expanded')
+                if aria_expanded == 'true':
+                    print("✅ Vulnerability section already expanded")
+                    return True
+        except Exception:
+            pass
 
         max_retries = 3
         for attempt in range(max_retries):
@@ -787,24 +914,56 @@ class AnalyticsPage(BasePage):
 
     # Government Response Section Methods
     def expand_govt_response_options(self, screenshot_prefix=None):
-        """Expand Government Response options section"""
+        """Expand Government Response options section (called once before testing all indicators)"""
         import time
+        from selenium.common.exceptions import StaleElementReferenceException
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
 
-        # Scroll to element first
-        self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                # Scroll to element with JavaScript for reliability
+                try:
+                    parent_element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
+                    if parent_element:
+                        self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'auto', block: 'center'});", parent_element)
+                        time.sleep(0.5)
+                except:
+                    # Fallback scroll
+                    self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
+                    time.sleep(0.5)
 
-        result = self.interact_with_option(
-            GovtResponseLocators.EXPAND_COLLAPSE,
-            "Government Response Options",
-            f"{screenshot_prefix}govt_response_show_options" if screenshot_prefix else None,
-            self.screenshot_dir
-        )
-        if result:
-            time.sleep(0.5)  # Wait for expand animation
-        return result
+                # Click to expand
+                result = self.interact_with_option(
+                    GovtResponseLocators.EXPAND_COLLAPSE,
+                    "Government Response Options",
+                    f"{screenshot_prefix}govt_response_show_options" if screenshot_prefix else None,
+                    self.screenshot_dir
+                )
+                if result:
+                    time.sleep(1)  # Wait for expand animation and DOM update
+                    return True
+
+                # If interact_with_option returned False, retry
+                if attempt < max_attempts - 1:
+                    print(f"⚠️  Expand click failed, retrying (attempt {attempt + 2}/{max_attempts})...")
+                    time.sleep(1.5)
+                    continue
+
+                return False
+
+            except (StaleElementReferenceException, Exception) as e:
+                if attempt < max_attempts - 1:
+                    print(f"⚠️  Error expanding section (attempt {attempt + 1}/{max_attempts}): {str(e)[:80]}")
+                    time.sleep(1.5)
+                    continue
+                else:
+                    print(f"❌ Failed to expand Government Response section after {max_attempts} attempts")
+                    return False
+
+        return False
 
     def collapse_govt_response_options(self):
         """Collapse Government Response options section with enhanced fallback logic"""

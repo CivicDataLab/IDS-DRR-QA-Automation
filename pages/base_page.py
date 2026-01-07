@@ -271,7 +271,7 @@ class BasePage:
 
     def select_dropdown_by_text(self, locator, text, element_name="Dropdown"):
         """
-        Select dropdown option by visible text
+        Select dropdown option by visible text with stale element retry logic
 
         Args:
             locator: Tuple of (By, selector)
@@ -281,15 +281,23 @@ class BasePage:
         Returns:
             bool: True if successful, False otherwise
         """
-        try:
-            from selenium.webdriver.support.ui import Select
-            import time
+        from selenium.webdriver.support.ui import Select
+        from selenium.common.exceptions import StaleElementReferenceException
+        import time
 
-            element = self.find_element(locator)
-            if element:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Re-fetch element on each retry to handle stale references
+                element = self.find_element(locator)
+                if not element:
+                    print(f"❌ {element_name} not found")
+                    return False
+
                 # Wait a moment for dropdown options to load (especially for dependent dropdowns)
                 time.sleep(1)
 
+                # Create Select object with fresh element reference
                 select = Select(element)
 
                 # Try exact match first
@@ -300,24 +308,45 @@ class BasePage:
                 except NoSuchElementException:
                     # If exact match fails, try partial match
                     print(f"⚠️ Exact match failed for '{text}', trying partial match...")
+
+                    # Re-fetch element and recreate Select for partial match attempt
+                    element = self.find_element(locator)
+                    if not element:
+                        print(f"❌ {element_name} became stale during partial match")
+                        return False
+
+                    select = Select(element)
                     options = select.options
+
                     for option in options:
                         if text.lower() in option.text.lower():
-                            select.select_by_visible_text(option.text)
-                            print(f"✅ Selected '{option.text}' from {element_name} (partial match for '{text}')")
-                            return True
+                            # Re-fetch one more time before selection
+                            element = self.find_element(locator)
+                            if element:
+                                select = Select(element)
+                                select.select_by_visible_text(option.text)
+                                print(f"✅ Selected '{option.text}' from {element_name} (partial match for '{text}')")
+                                return True
 
                     # If still not found, print available options for debugging
                     available = [opt.text for opt in options if opt.text.strip()]
                     print(f"❌ Could not find '{text}' in {element_name}")
                     print(f"   Available options: {available}")
                     return False
-            else:
-                print(f"❌ {element_name} not found")
+
+            except StaleElementReferenceException:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ Stale element in {element_name}, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"❌ {element_name} remained stale after {max_retries} attempts")
+                    return False
+            except Exception as e:
+                print(f"❌ Error selecting from {element_name}: {e}")
                 return False
-        except Exception as e:
-            print(f"❌ Error selecting from {element_name}: {e}")
-            return False
+
+        return False
 
     def click_and_screenshot(self, locator, element_name, screenshot_name, screenshot_dir=None):
         """
@@ -340,6 +369,7 @@ class BasePage:
     def interact_with_option(self, locator, option_name, screenshot_prefix, screenshot_dir):
         """
         Generic method to interact with analytics options (expand/collapse/select)
+        Uses JavaScript click as fallback if regular click fails
 
         Args:
             locator: Tuple of (By, selector)
@@ -356,8 +386,19 @@ class BasePage:
                 print(f"❌ {option_name} not found")
                 return False
 
-            element.click()
-            print(f"✅ {option_name} clicked")
+            # Try regular click first
+            try:
+                element.click()
+                print(f"✅ {option_name} clicked")
+            except Exception as click_err:
+                # Fallback to JavaScript click
+                print(f"⚠️  Regular click failed for {option_name}, trying JavaScript click...")
+                try:
+                    self.driver.execute_script("arguments[0].click();", element)
+                    print(f"✅ {option_name} clicked (JavaScript)")
+                except Exception as js_err:
+                    print(f"❌ Both click methods failed for {option_name}: {js_err}")
+                    return False
 
             # Take screenshot if screenshot_prefix is provided
             if screenshot_prefix:

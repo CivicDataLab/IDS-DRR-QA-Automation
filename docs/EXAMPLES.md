@@ -94,7 +94,7 @@ jobs:
 
 ```bash
 # Single test
-pytest tests/test_analytics.py::TestAnalyticsNavigation::test_navigate -v -s
+pytest tests/test_analytics.py::TestMultiStateNavigation::test_navigate_to_analytics_from_homepage -v -s
 
 # Detailed logs
 pytest tests/ --log-cli-level=DEBUG

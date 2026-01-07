@@ -44,7 +44,7 @@ IDS-DRR-QA-Automation/
 │   ├── uttar_pradesh.yaml
 │   └── states_master.yaml      # Master index file
 ├── tests/
-│   └── test_analytics_multistate.py  # Multi-state test suite
+│   └── test_analytics.py  # Multi-state test suite
 ├── utils/
 │   ├── state_indicator_discovery.py  # Discovery utility
 │   ├── state_config_loader.py        # Config loader
@@ -90,19 +90,19 @@ python scripts/discover_state_indicators.py --validate
 
 ```bash
 # Run all multi-state tests
-pytest tests/test_analytics_multistate.py -v
+pytest tests/test_analytics.py -v
 
 # Run tests for a specific state
-pytest tests/test_analytics_multistate.py -v -k "assam"
+pytest tests/test_analytics.py -v -k "assam"
 
 # Run tests for a specific section
-pytest tests/test_analytics_multistate.py -v -k "hazard"
+pytest tests/test_analytics.py -v -k "hazard"
 
 # Run with parallel execution (4 workers)
-pytest tests/test_analytics_multistate.py -v -n 4
+pytest tests/test_analytics.py -v -n 4
 
 # Generate HTML report
-pytest tests/test_analytics_multistate.py -v --html=reports/multistate_report.html
+pytest tests/test_analytics.py -v --html=reports/multistate_report.html
 ```
 
 ## Configuration Files
@@ -197,31 +197,31 @@ Cross-state analysis:
 ### Test Specific State and Section
 
 ```bash
-pytest tests/test_analytics_multistate.py -v -k "assam and hazard"
+pytest tests/test_analytics.py -v -k "assam and hazard"
 ```
 
 ### Test All Exposure Indicators Across All States
 
 ```bash
-pytest tests/test_analytics_multistate.py::TestSectionCoverageByState::test_exposure_section_coverage -v
+pytest tests/test_analytics.py::TestSectionCoverageByState::test_exposure_section_coverage -v
 ```
 
 ### Run Smoke Tests Only
 
 ```bash
-pytest tests/test_analytics_multistate.py -v -m smoke
+pytest tests/test_analytics.py -v -m smoke
 ```
 
 ### Parallel Execution with Custom Workers
 
 ```bash
-pytest tests/test_analytics_multistate.py -v -n 8
+pytest tests/test_analytics.py -v -n 8
 ```
 
 ### Generate Multiple Report Formats
 
 ```bash
-pytest tests/test_analytics_multistate.py -v \
+pytest tests/test_analytics.py -v \
   --html=reports/multistate.html \
   --self-contained-html \
   -n 4
@@ -320,7 +320,7 @@ To add a new state:
 
 3. **Run Tests**:
    ```bash
-   pytest tests/test_analytics_multistate.py -v -k "new_state"
+   pytest tests/test_analytics.py -v -k "new_state"
    ```
 
 That's it! No code changes required.
@@ -332,7 +332,7 @@ That's it! No code changes required.
 Edit the test to run only specific states:
 
 ```python
-# In test_analytics_multistate.py
+# In test_analytics.py
 ENABLED_STATES = ["assam", "odisha"]  # Only test these states
 
 def get_multistate_test_params():
@@ -381,7 +381,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run Multi-State Tests
         run: |
-          pytest tests/test_analytics_multistate.py -v -n 4 \
+          pytest tests/test_analytics.py -v -n 4 \
             --html=reports/multistate.html
       - name: Upload Report
         uses: actions/upload-artifact@v2
@@ -425,7 +425,7 @@ For optimal performance:
 
 ```bash
 # 4 parallel workers, optimized reporting
-pytest tests/test_analytics_multistate.py -v -n 4 \
+pytest tests/test_analytics.py -v -n 4 \
   --tb=short \
   --maxfail=10 \
   -q
