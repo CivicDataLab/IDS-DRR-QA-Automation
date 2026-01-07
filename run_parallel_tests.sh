@@ -43,13 +43,11 @@ usage() {
     echo "  --no-healing            Disable self-healing"
     echo "  --serial                Run tests serially (no parallel)"
     echo "  --auto                  Auto-detect number of workers"
-    echo "  --skip-analytics        Skip test_analytics.py (runs all other tests)"
     echo ""
     echo "Examples:"
     echo "  ./run_parallel_tests.sh                          # Run with 4 workers"
     echo "  ./run_parallel_tests.sh -n 8                     # Run with 8 workers"
     echo "  ./run_parallel_tests.sh --auto                   # Auto-detect workers"
-    echo "  ./run_parallel_tests.sh --skip-analytics -n 4    # Run all tests except test_analytics.py"
     echo "  ./run_parallel_tests.sh -m smoke -n 4            # Run smoke tests with 4 workers"
     echo "  ./run_parallel_tests.sh -n 4 -r 2                # Run with 4 workers, retry failures"
     echo "  ./run_parallel_tests.sh --serial                 # Run tests one by one"
@@ -65,7 +63,6 @@ RERUNS=0
 HEALING_FLAG=""
 PARALLEL_FLAG="-n"
 AUTO_WORKERS=""
-SKIP_ANALYTICS=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -103,10 +100,6 @@ while [[ $# -gt 0 ]]; do
             AUTO_WORKERS="auto"
             shift
             ;;
-        --skip-analytics)
-            SKIP_ANALYTICS="--ignore=tests/test_analytics.py"
-            shift
-            ;;
         *)
             print_error "Unknown option: $1"
             usage
@@ -120,12 +113,6 @@ CMD="pytest"
 
 # Add test path
 CMD="$CMD $TEST_PATH"
-
-# Add skip analytics flag if set
-if [ -n "$SKIP_ANALYTICS" ]; then
-    CMD="$CMD $SKIP_ANALYTICS"
-    print_warning "Skipping test_analytics.py"
-fi
 
 # Add parallel workers
 if [ -n "$PARALLEL_FLAG" ]; then

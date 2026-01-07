@@ -60,13 +60,13 @@ Assam (assam):
 
 ```bash
 # Run all tests with parallel execution
-pytest tests/test_analytics_multistate.py -v -n 4
+pytest tests/test_analytics.py -v -n 4
 ```
 
 **Expected Output:**
 ```
-tests/test_analytics_multistate.py::TestMultiStateIndicators::test_indicator_loads_for_state[assam-Assam-hazard-total_monthly_rainfall-Total Monthly Rainfall] PASSED
-tests/test_analytics_multistate.py::TestMultiStateIndicators::test_indicator_loads_for_state[assam-Assam-hazard-sum_of_inundation_intensities-Sum of Inundation Intensities] PASSED
+tests/test_analytics.py::TestMultiStateIndicators::test_indicator_loads_for_state[assam-Assam-hazard-total_monthly_rainfall-Total Monthly Rainfall] PASSED
+tests/test_analytics.py::TestMultiStateIndicators::test_indicator_loads_for_state[assam-Assam-hazard-sum_of_inundation_intensities-Sum of Inundation Intensities] PASSED
 ...
 
 ================================================================================
@@ -103,27 +103,27 @@ cat reports/multistate/multistate_report_*.json
 
 ### Test Single State
 ```bash
-pytest tests/test_analytics_multistate.py -v -k "assam"
+pytest tests/test_analytics.py -v -k "assam"
 ```
 
 ### Test Single Section (All States)
 ```bash
-pytest tests/test_analytics_multistate.py -v -k "hazard"
+pytest tests/test_analytics.py -v -k "hazard"
 ```
 
 ### Test Specific State + Section
 ```bash
-pytest tests/test_analytics_multistate.py -v -k "assam and hazard"
+pytest tests/test_analytics.py -v -k "assam and hazard"
 ```
 
 ### Run Smoke Tests Only
 ```bash
-pytest tests/test_analytics_multistate.py -v -m smoke
+pytest tests/test_analytics.py -v -m smoke
 ```
 
 ### Generate HTML Report
 ```bash
-pytest tests/test_analytics_multistate.py -v --html=reports/my_report.html
+pytest tests/test_analytics.py -v --html=reports/my_report.html
 ```
 
 ---
@@ -159,17 +159,17 @@ config/states/
 
 **For CI/CD:**
 ```bash
-pytest tests/test_analytics_multistate.py -v -n 4 --tb=short
+pytest tests/test_analytics.py -v -n 4 --tb=short
 ```
 
 **For Local Development:**
 ```bash
-pytest tests/test_analytics_multistate.py -v -n 2 -k "assam"
+pytest tests/test_analytics.py -v -n 2 -k "assam"
 ```
 
 **For Debugging:**
 ```bash
-pytest tests/test_analytics_multistate.py -v -s -k "specific_test_name"
+pytest tests/test_analytics.py -v -s -k "specific_test_name"
 ```
 
 ---

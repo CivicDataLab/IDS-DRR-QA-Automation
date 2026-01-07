@@ -87,7 +87,6 @@ jobs:
           MARKER=${{ github.event_name == 'workflow_dispatch' && inputs.test_marker != '' && format('-m {0}', inputs.test_marker) || '' }}
 
           pytest tests/ \
-            --ignore=tests/test_analytics.py \
             -n $WORKERS \
             --dist loadscope \
             --reruns 2 \
@@ -360,7 +359,7 @@ jobs:
           SHORT_TIMEOUT: 5
           LONG_TIMEOUT: 15
         run: |
-          pytest tests/ --ignore=tests/test_analytics.py -n 4 -m smoke --html=reports/smoke_report.html --self-contained-html || true
+          pytest tests/ -n 4 -m smoke --html=reports/smoke_report.html --self-contained-html || true
 
       - name: Upload smoke test report
         if: always()
@@ -437,7 +436,7 @@ jobs:
           mkdir -p reports/multistate
 
           # Run multi-state tests with parallel execution
-          pytest tests/test_analytics_multistate.py \
+          pytest tests/test_analytics.py \
             -v \
             -n 4 \
             --html=reports/multistate_test_report.html \

@@ -43,7 +43,7 @@ def check_framework_files():
         'utils/state_indicator_discovery.py',
         'utils/state_config_loader.py',
         'utils/pytest_multistate_plugin.py',
-        'tests/test_analytics_multistate.py',
+        'tests/test_analytics.py',
         'scripts/discover_state_indicators.py',
         'docs/MULTISTATE_QUICKSTART.md',
         'MULTISTATE_FRAMEWORK.md'
@@ -165,7 +165,7 @@ def main():
         print("\n🎉 Setup verification complete! Framework is ready to use.")
         print("\nNext steps:")
         print("  1. If state configs not found, run: python scripts/discover_state_indicators.py")
-        print("  2. Run tests: pytest tests/test_analytics_multistate.py -v")
+        print("  2. Run tests: pytest tests/test_analytics.py -v")
         print("  3. View documentation: docs/MULTISTATE_QUICKSTART.md")
         return 0
     else:
