@@ -48,7 +48,7 @@ pytest -m analytics -v
 pytest -m dataset -v
 
 # Specific test
-pytest tests/test_analytics.py::TestAnalyticsNavigation -v
+pytest tests/test_analytics.py::TestMultiStateNavigation -v
 ```
 
 ### Parallel Execution

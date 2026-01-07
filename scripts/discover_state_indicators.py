@@ -179,7 +179,7 @@ def main():
         print("\nNext steps:")
         print(f"  1. Review generated configs in: {args.output}/")
         print(f"  2. Validate configs: python scripts/discover_state_indicators.py --validate")
-        print(f"  3. Run tests: pytest tests/test_analytics_multistate.py -v")
+        print(f"  3. Run tests: pytest tests/test_analytics.py -v")
 
         print("\n" + "="*70 + "\n")
 
