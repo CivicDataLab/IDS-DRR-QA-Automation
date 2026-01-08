@@ -317,8 +317,9 @@ class TestMultiStateIndicatorsMapView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait for revenue circle dropdown to populate (dependent on district selection)
-        time.sleep(3)
+        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
+        print(f"⏳ Waiting for revenue circle dropdown to populate...")
+        time.sleep(6)  # Increased wait time for dropdown to load options
 
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
@@ -664,8 +665,9 @@ class TestMultiStateIndicatorsChartView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait for revenue circle dropdown to populate (dependent on district selection)
-        time.sleep(3)
+        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
+        print(f"⏳ Waiting for revenue circle dropdown to populate...")
+        time.sleep(6)  # Increased wait time for dropdown to load options
 
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
@@ -766,8 +768,9 @@ class TestMultiStateIndicatorsTableView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait for revenue circle dropdown to populate (dependent on district selection)
-        time.sleep(3)
+        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
+        print(f"⏳ Waiting for revenue circle dropdown to populate...")
+        time.sleep(6)  # Increased wait time for dropdown to load options
 
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
