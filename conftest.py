@@ -40,16 +40,19 @@ def pytest_configure(config):
     if hasattr(config.option, 'json_report_file') and config.option.json_report_file:
         config.option.json_report_file = f"reports/test_report_{timestamp}.json"
 
-    # Register self-healing plugin
-    from utils.pytest_self_healing_plugin import SelfHealingPlugin
-    config.pluginmanager.register(SelfHealingPlugin(), "self_healing_plugin")
-
-    # Register multi-state reporting plugin
-    from utils.pytest_multistate_plugin import MultiStateReportPlugin
-    if not hasattr(config, '_multistate_plugin'):
-        multistate_plugin = MultiStateReportPlugin()
-        config._multistate_plugin = multistate_plugin
-        config.pluginmanager.register(multistate_plugin, "multistate_report_plugin")
+    # Note: Additional report plugins (self-healing, multistate) are disabled
+    # All test information is consolidated into the main HTML report via pytest-html
+    #
+    # If you need to re-enable these plugins, uncomment the lines below:
+    #
+    # from utils.pytest_self_healing_plugin import SelfHealingPlugin
+    # config.pluginmanager.register(SelfHealingPlugin(), "self_healing_plugin")
+    #
+    # from utils.pytest_multistate_plugin import MultiStateReportPlugin
+    # if not hasattr(config, '_multistate_plugin'):
+    #     multistate_plugin = MultiStateReportPlugin()
+    #     config._multistate_plugin = multistate_plugin
+    #     config.pluginmanager.register(multistate_plugin, "multistate_report_plugin")
 
     # Add metadata to HTML report
     config._metadata = {
@@ -82,11 +85,9 @@ def driver(request):
 
     yield driver
 
-    # Collect healing events before quitting
-    if hasattr(driver, '_healing_events') and driver._healing_events:
-        plugin = request.config.pluginmanager.get_plugin("self_healing_plugin")
-        if plugin:
-            plugin.healing_events.extend(driver._healing_events)
+    # Note: Self-healing event collection is disabled
+    # Healing events are tracked on the driver but not reported separately
+    # All test results are in the main HTML report
 
     # Clear browser state before quitting to prevent interference
     try:

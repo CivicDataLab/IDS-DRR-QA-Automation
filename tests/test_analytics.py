@@ -306,10 +306,27 @@ class TestMultiStateIndicatorsMapView:
         assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
         assert analytics_page.select_view(1), f"❌ Failed to select Map view"
 
-        # Wait for page to stabilize after view selection (critical for parallel execution)
-        # Extended wait to allow district dropdown to fully load and stabilize
+        # Wait for district dropdown to be ready after view selection (uses explicit wait)
+        from selenium.webdriver.support.ui import WebDriverWait, Select
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.common.by import By
+        from utils.wait_helpers import wait_for_dropdown_options
         import time
-        time.sleep(3)
+
+        # Define helper function for this test
+        def district_dropdown_ready(driver):
+            try:
+                element = driver.find_element(By.XPATH, "//select[contains(@id, 'district') or contains(@class, 'district')]")
+                select = Select(element)
+                return len(select.options) > 1 and element.is_enabled()
+            except:
+                return False
+
+        # Wait for dropdown using explicit wait
+        try:
+            WebDriverWait(driver, 15).until(district_dropdown_ready)
+        except:
+            pass  # Continue if timeout
 
         # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
         district = AnalyticsTestData.get_district_for_state(state_key)
@@ -317,10 +334,7 @@ class TestMultiStateIndicatorsMapView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
-        print(f"⏳ Waiting for revenue circle dropdown to populate...")
-        time.sleep(6)  # Increased wait time for dropdown to load options
-
+        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -350,9 +364,10 @@ class TestMultiStateIndicatorsMapView:
             print(f"[{idx}/{len(enabled_indicators)}] Testing: {indicator_name}")
 
             try:
-                # Wait for DOM to stabilize from previous indicator
+                # Wait for loading spinner from previous indicator to clear
                 if idx > 1:
-                    time.sleep(1.5)
+                    from utils.wait_helpers import wait_for_loading_to_disappear
+                    wait_for_loading_to_disappear(driver, timeout=5)
 
                 # Select indicator (section should already be expanded)
                 if not analytics_page.select_indicator_by_text(indicator_name, section):
@@ -360,8 +375,21 @@ class TestMultiStateIndicatorsMapView:
                     print(f"  ❌ Failed to select")
                     continue
 
-                # Check if error page appeared (application crashed)
-                time.sleep(2)  # Wait for potential error page
+                # Wait for either error page or map to load (whichever comes first)
+                from utils.wait_helpers import wait_for_any_condition
+
+                def check_error(driver):
+                    return analytics_page.is_error_page_displayed() and 'error'
+
+                def check_map_loaded(driver):
+                    try:
+                        map_element = driver.find_element(By.CSS_SELECTOR, "canvas, svg")
+                        return map_element.is_displayed() and 'success'
+                    except:
+                        return False
+
+                result = wait_for_any_condition(driver, [check_error, check_map_loaded], timeout=10)
+
                 if analytics_page.is_error_page_displayed():
                     print(f"  ⚠️  Application error page detected - indicator broke the app")
                     failed.append({'name': indicator_name, 'reason': 'Application crashed with error page'})
@@ -374,9 +402,15 @@ class TestMultiStateIndicatorsMapView:
                     assert common_page.navigate_to_analytics(), "❌ Recovery failed: Cannot navigate to Analytics"
                     assert analytics_page.select_state(state_name), f"❌ Recovery failed: Cannot select state {state_name}"
                     assert analytics_page.select_view(1), "❌ Recovery failed: Cannot select Map view"
-                    time.sleep(3)
+
+                    # Wait for district dropdown to be ready
+                    try:
+                        WebDriverWait(driver, 15).until(district_dropdown_ready)
+                    except:
+                        pass
+
                     assert analytics_page.select_district(district), f"❌ Recovery failed: Cannot select district {district}"
-                    time.sleep(3)
+                    # Revenue circle has its own explicit wait
                     assert analytics_page.select_revenue_circle(revenue_circle), f"❌ Recovery failed: Cannot select revenue circle {revenue_circle}"
                     assert expand_method(), f"❌ Recovery failed: Cannot expand {section}"
                     print(f"  ✅ Recovery complete - continuing with next indicator")
@@ -396,7 +430,6 @@ class TestMultiStateIndicatorsMapView:
 
                     # Wait for map element
                     map_element = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "canvas, svg")))
-                    time.sleep(1)  # Allow rendering
 
                     # Check dimensions
                     map_width = map_element.size['width']
@@ -423,9 +456,15 @@ class TestMultiStateIndicatorsMapView:
                         common_page.navigate_to_analytics()
                         analytics_page.select_state(state_name)
                         analytics_page.select_view(1)
-                        time.sleep(3)
+
+                        # Wait for district dropdown to be ready
+                        try:
+                            WebDriverWait(driver, 15).until(district_dropdown_ready)
+                        except:
+                            pass
+
                         analytics_page.select_district(district)
-                        time.sleep(3)
+                        # Revenue circle has its own explicit wait
                         analytics_page.select_revenue_circle(revenue_circle)
                         expand_method()
                         print(f"  ✅ Recovery complete")
@@ -614,10 +653,13 @@ class TestMultiStateIndicatorsMapView:
                 </div>
             """))
 
-        # Assert that at least 50% passed (lenient threshold for parallel execution issues)
-        pass_rate = len(passed) / len(enabled_indicators) if enabled_indicators else 0
-        assert pass_rate >= 0.5, \
-            f"❌ Too many failures: Only {len(passed)}/{len(enabled_indicators)} passed ({pass_rate*100:.1f}%)"
+        # Assert that ALL indicators passed - any failure should fail the test
+        if failed:
+            failure_summary = f"❌ {len(failed)}/{len(enabled_indicators)} indicators FAILED"
+            failure_details = "\n".join([f"  • {f['name']}: {f['reason']}" for f in failed[:5]])  # Show first 5
+            if len(failed) > 5:
+                failure_details += f"\n  ... and {len(failed) - 5} more"
+            assert False, f"{failure_summary}\n{failure_details}"
 
         print(f"✅ Section test passed: {len(passed)}/{len(enabled_indicators)} indicators working")
 
@@ -655,9 +697,11 @@ class TestMultiStateIndicatorsChartView:
         assert analytics_page.select_state(state_name)
         assert analytics_page.select_view(2)  # Chart view
 
-        # Wait for page to stabilize after view selection (critical for parallel execution)
-        import time
-        time.sleep(2)
+        # Wait for district dropdown to be ready using explicit wait
+        try:
+            WebDriverWait(driver, 15).until(district_dropdown_ready)
+        except:
+            pass
 
         # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
         district = AnalyticsTestData.get_district_for_state(state_key)
@@ -665,10 +709,7 @@ class TestMultiStateIndicatorsChartView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
-        print(f"⏳ Waiting for revenue circle dropdown to populate...")
-        time.sleep(6)  # Increased wait time for dropdown to load options
-
+        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -694,9 +735,9 @@ class TestMultiStateIndicatorsChartView:
                     continue
 
                 wait = WebDriverWait(driver, 20)
-                time.sleep(2)
 
                 try:
+                    # Explicit wait already handles timing - no sleep needed
                     chart_element = wait.until(EC.visibility_of_element_located(
                         (By.CSS_SELECTOR, "canvas, svg, .chart, [class*='chart']")))
 
@@ -721,8 +762,13 @@ class TestMultiStateIndicatorsChartView:
         print(f"❌ Failed: {len(failed)}/{len(enabled_indicators)}")
         print(f"{'='*80}\n")
 
-        pass_rate = len(passed) / len(enabled_indicators) if enabled_indicators else 0
-        assert pass_rate >= 0.5, f"❌ Too many failures: {len(passed)}/{len(enabled_indicators)} passed"
+        # Assert that ALL indicators passed - any failure should fail the test
+        if failed:
+            failure_summary = f"❌ {len(failed)}/{len(enabled_indicators)} indicators FAILED (Chart View)"
+            failure_details = "\n".join([f"  • {f['name']}: {f['reason']}" for f in failed[:5]])
+            if len(failed) > 5:
+                failure_details += f"\n  ... and {len(failed) - 5} more"
+            assert False, f"{failure_summary}\n{failure_details}"
 
 
 @pytest.mark.analytics
@@ -758,9 +804,11 @@ class TestMultiStateIndicatorsTableView:
         assert analytics_page.select_state(state_name)
         assert analytics_page.select_view(3)  # Table view
 
-        # Wait for page to stabilize after view selection (critical for parallel execution)
-        import time
-        time.sleep(2)
+        # Wait for district dropdown to be ready using explicit wait
+        try:
+            WebDriverWait(driver, 15).until(district_dropdown_ready)
+        except:
+            pass
 
         # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
         district = AnalyticsTestData.get_district_for_state(state_key)
@@ -768,10 +816,7 @@ class TestMultiStateIndicatorsTableView:
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
 
-        # Wait longer for revenue circle dropdown to populate (dependent on district selection)
-        print(f"⏳ Waiting for revenue circle dropdown to populate...")
-        time.sleep(6)  # Increased wait time for dropdown to load options
-
+        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -797,9 +842,9 @@ class TestMultiStateIndicatorsTableView:
                     continue
 
                 wait = WebDriverWait(driver, 20)
-                time.sleep(2)
 
                 try:
+                    # Explicit wait already handles timing - no sleep needed
                     table_element = wait.until(EC.visibility_of_element_located(
                         (By.CSS_SELECTOR, "table, .table, [class*='table']")))
 
@@ -824,8 +869,13 @@ class TestMultiStateIndicatorsTableView:
         print(f"❌ Failed: {len(failed)}/{len(enabled_indicators)}")
         print(f"{'='*80}\n")
 
-        pass_rate = len(passed) / len(enabled_indicators) if enabled_indicators else 0
-        assert pass_rate >= 0.5, f"❌ Too many failures: {len(passed)}/{len(enabled_indicators)} passed"
+        # Assert that ALL indicators passed - any failure should fail the test
+        if failed:
+            failure_summary = f"❌ {len(failed)}/{len(enabled_indicators)} indicators FAILED (Table View)"
+            failure_details = "\n".join([f"  • {f['name']}: {f['reason']}" for f in failed[:5]])
+            if len(failed) > 5:
+                failure_details += f"\n  ... and {len(failed) - 5} more"
+            assert False, f"{failure_summary}\n{failure_details}"
 
 
 @pytest.mark.analytics

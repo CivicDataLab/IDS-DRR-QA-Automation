@@ -20,11 +20,11 @@ class AnalyticsTestData:
         },
         'bihar': {
             'district': 'Patna',
-            'revenue_circle': 'Patna Sadar'
+            'revenue_circle': 'Patna rural'
         },
         'uttar_pradesh': {
             'district': 'Lucknow',
-            'revenue_circle': 'Lucknow'
+            'revenue_circle': 'Sadar'
         }
     }
 
