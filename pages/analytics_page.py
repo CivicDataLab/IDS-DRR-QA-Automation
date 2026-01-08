@@ -70,8 +70,9 @@ class AnalyticsPage(BasePage):
                     # Loading indicator not found or already gone
                     pass
 
-            # Additional wait for DOM to be stable
-            time.sleep(1)
+            # Wait for document ready state instead of fixed sleep
+            from utils.wait_helpers import wait_for_document_ready
+            wait_for_document_ready(self.driver, timeout=5)
             return True
         except Exception as e:
             print(f"⚠️  Warning during load wait: {e}")
@@ -112,8 +113,6 @@ class AnalyticsPage(BasePage):
                     select_element = wait.until(
                         EC.presence_of_element_located((By.NAME, "State"))
                     )
-                    time.sleep(0.5)
-
                     select = Select(select_element)
                     available_options = [opt.text.strip() for opt in select.options]
                     print(f"📋 Found <select> dropdown with states: {', '.join(available_options[:5])}...")
@@ -161,8 +160,6 @@ class AnalyticsPage(BasePage):
 
                     # Scroll into view
                     self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
-                    time.sleep(0.5)
-
                     # Click the state
                     success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
                     if success:
@@ -177,7 +174,6 @@ class AnalyticsPage(BasePage):
             except (StaleElementReferenceException, ElementNotInteractableException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️  State selection failed ({type(e).__name__}), retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(2)
                     continue
                 else:
                     print(f"❌ Failed to select state {state_name} after {max_retries} attempts: {e}")
@@ -187,7 +183,6 @@ class AnalyticsPage(BasePage):
                 if attempt < max_retries - 1:
                     print(f"⚠️  Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
                     print(f"⚠️  Retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(2)
                     continue
                 else:
                     print(f"❌ Failed to select state {state_name}: {type(e).__name__}: {e}")
@@ -259,7 +254,6 @@ class AnalyticsPage(BasePage):
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Stale element encountered, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Failed after {max_retries} attempts due to stale elements")
@@ -268,12 +262,11 @@ class AnalyticsPage(BasePage):
         return False
 
     def select_district(self, district_name):
-        """Select district from dropdown with wait for element to be ready"""
-        import time
+        """Select district from dropdown and wait for revenue circle dropdown to be ready"""
+        from utils.wait_helpers import wait_for_dropdown_options
 
         # Wait for page load to complete before interacting with district dropdown
         self._wait_for_page_load_complete()
-        time.sleep(0.5)  # Additional buffer for dropdown to be interactable
 
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.DISTRICT_SELECT,
@@ -282,15 +275,51 @@ class AnalyticsPage(BasePage):
         )
         if success:
             print(f"Selected district: {district_name}")
+            # Wait for revenue circle dropdown to populate (triggered by district onChange)
+            print(f"⏳ Waiting for revenue circle/block dropdown to become ready...")
+            wait_for_dropdown_options(
+                self.driver,
+                AnalyticsPageLocators.REVENUE_CIRCLE_SELECT,
+                timeout=20,
+                min_options=1
+            )
         return success
 
     def select_revenue_circle(self, revenue_circle_name):
-        """Select revenue circle from dropdown with wait for element to be ready"""
-        import time
+        """
+        Select revenue circle/block from dropdown with explicit wait for options to populate.
 
-        # Wait for page load to complete before interacting with revenue circle dropdown
+        The revenue circle dropdown is dependent on district selection and requires time
+        to fetch and populate options. This method waits explicitly for the dropdown to
+        have more than just the placeholder option before attempting selection.
+
+        Args:
+            revenue_circle_name: Name of revenue circle/block to select
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        from selenium.webdriver.support.ui import Select
+        from utils.wait_helpers import wait_for_dropdown_options
+
+        # Wait for page load to complete
         self._wait_for_page_load_complete()
-        time.sleep(0.5)  # Additional buffer for dropdown to be interactable
+
+        # Double-check dropdown has options (should already be populated from select_district)
+        print(f"✅ Verifying revenue circle/block dropdown has options...")
+        if wait_for_dropdown_options(self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, timeout=5):
+            print(f"✅ Dropdown ready for selection")
+        else:
+            print(f"⚠️ Timeout waiting for dropdown to populate")
+            try:
+                element = self.find_element(AnalyticsPageLocators.REVENUE_CIRCLE_SELECT)
+                if element:
+                    select = Select(element)
+                    available = [opt.text for opt in select.options]
+                    print(f"   Available options: {available}")
+            except Exception:
+                pass
+            return False
 
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.REVENUE_CIRCLE_SELECT,
@@ -359,12 +388,10 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
-                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Stale element in expand_hazard_options, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     return False
@@ -378,8 +405,6 @@ class AnalyticsPage(BasePage):
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
-        time.sleep(0.5)
-
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -398,12 +423,10 @@ class AnalyticsPage(BasePage):
                 try:
                     actions = ActionChains(self.driver)
                     actions.move_to_element(parent_element).perform()
-                    time.sleep(0.8)  # Increased wait time for hover effect
 
                     collapse_button = self.find_element(HazardLocators.COLLAPSE_BUTTON, use_healing=False)
                     if collapse_button and collapse_button.is_displayed():
                         collapse_button.click()
-                        time.sleep(0.8)  # Wait for collapse animation
                         print("✅ Hazard Options collapsed successfully (hover method)")
                         return True
                 except Exception as hover_error:
@@ -412,7 +435,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 2: Direct click on parent element (toggle behavior)
                 try:
                     parent_element.click()
-                    time.sleep(0.8)  # Wait for collapse animation
 
                     # Verify it collapsed
                     parent_element = self.find_element(HazardLocators.EXPAND_COLLAPSE, use_healing=False)
@@ -427,7 +449,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 3: JavaScript click as last resort
                 try:
                     self.driver.execute_script("arguments[0].click();", parent_element)
-                    time.sleep(0.8)
                     print("✅ Hazard Options collapsed successfully (JavaScript click)")
                     return True
                 except Exception as js_error:
@@ -436,13 +457,11 @@ class AnalyticsPage(BasePage):
                 # If we got here, retry
                 if attempt < max_retries - 1:
                     print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
-                    time.sleep(1)
                     continue
 
             except (StaleElementReferenceException, TimeoutException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Failed to collapse Hazard Options after {max_retries} attempts: {e}")
@@ -450,7 +469,6 @@ class AnalyticsPage(BasePage):
             except Exception as e:
                 print(f"❌ Error in collapse_hazard_options: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
                     continue
                 return False
 
@@ -476,8 +494,6 @@ class AnalyticsPage(BasePage):
 
         # Wait for page to stabilize
         self._wait_for_page_load_complete()
-        time.sleep(0.5)
-
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -513,11 +529,9 @@ class AnalyticsPage(BasePage):
                 # Scroll into view with retry for stale element
                 try:
                     self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", label_element)
-                    time.sleep(0.3)
                 except StaleElementReferenceException:
                     if attempt < max_retries - 1:
                         print(f"⚠️  Stale element during scroll, retrying ({attempt + 1}/{max_retries})...")
-                        time.sleep(1)
                         continue
 
                 # Click the label with retry for stale element
@@ -526,7 +540,6 @@ class AnalyticsPage(BasePage):
                 except StaleElementReferenceException:
                     if attempt < max_retries - 1:
                         print(f"⚠️  Stale element during click, retrying ({attempt + 1}/{max_retries})...")
-                        time.sleep(1)
                         continue
                     else:
                         raise
@@ -535,13 +548,11 @@ class AnalyticsPage(BasePage):
                     self.driver.execute_script("arguments[0].click();", label_element)
 
                 print(f"✅ Selected indicator: {indicator_text}")
-                time.sleep(0.5)  # Wait for UI to update
                 return True
 
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Stale element in select_indicator, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Indicator element remained stale after {max_retries} attempts")
@@ -550,7 +561,6 @@ class AnalyticsPage(BasePage):
             except Exception as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Error on attempt {attempt + 1}, retrying...")
-                    time.sleep(1)
                     continue
 
                 print(f"❌ Failed to select indicator '{indicator_text}': {e}")
@@ -631,12 +641,10 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
-                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Stale element in expand_exposure_options, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     return False
@@ -650,8 +658,6 @@ class AnalyticsPage(BasePage):
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
-        time.sleep(0.5)
-
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -670,12 +676,10 @@ class AnalyticsPage(BasePage):
                 try:
                     actions = ActionChains(self.driver)
                     actions.move_to_element(parent_element).perform()
-                    time.sleep(0.8)  # Increased wait time for hover effect
 
                     collapse_button = self.find_element(ExposureLocators.COLLAPSE_BUTTON, use_healing=False)
                     if collapse_button and collapse_button.is_displayed():
                         collapse_button.click()
-                        time.sleep(0.8)  # Wait for collapse animation
                         print("✅ Exposure Options collapsed successfully (hover method)")
                         return True
                 except Exception as hover_error:
@@ -684,7 +688,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 2: Direct click on parent element (toggle behavior)
                 try:
                     parent_element.click()
-                    time.sleep(0.8)  # Wait for collapse animation
 
                     # Verify it collapsed
                     parent_element = self.find_element(ExposureLocators.EXPAND_COLLAPSE, use_healing=False)
@@ -699,7 +702,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 3: JavaScript click as last resort
                 try:
                     self.driver.execute_script("arguments[0].click();", parent_element)
-                    time.sleep(0.8)
                     print("✅ Exposure Options collapsed successfully (JavaScript click)")
                     return True
                 except Exception as js_error:
@@ -708,13 +710,11 @@ class AnalyticsPage(BasePage):
                 # If we got here, retry
                 if attempt < max_retries - 1:
                     print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
-                    time.sleep(1)
                     continue
 
             except (StaleElementReferenceException, TimeoutException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Failed to collapse Exposure Options after {max_retries} attempts: {e}")
@@ -722,7 +722,6 @@ class AnalyticsPage(BasePage):
             except Exception as e:
                 print(f"❌ Error in collapse_exposure_options: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
                     continue
                 return False
 
@@ -785,12 +784,10 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
-                    time.sleep(0.5)  # Wait for expand animation
                     return True
             except StaleElementReferenceException:
                 if attempt < max_retries - 1:
                     print(f"⚠️  Stale element in expand_vulnerability_options, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     return False
@@ -804,8 +801,6 @@ class AnalyticsPage(BasePage):
 
         # Wait for page to be ready
         self._wait_for_page_load_complete()
-        time.sleep(0.5)
-
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -824,12 +819,10 @@ class AnalyticsPage(BasePage):
                 try:
                     actions = ActionChains(self.driver)
                     actions.move_to_element(parent_element).perform()
-                    time.sleep(0.8)  # Increased wait time for hover effect
 
                     collapse_button = self.find_element(VulnerabilityLocators.COLLAPSE_BUTTON, use_healing=False)
                     if collapse_button and collapse_button.is_displayed():
                         collapse_button.click()
-                        time.sleep(0.8)  # Wait for collapse animation
                         print("✅ Vulnerability Options collapsed successfully (hover method)")
                         return True
                 except Exception as hover_error:
@@ -838,7 +831,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 2: Direct click on parent element (toggle behavior)
                 try:
                     parent_element.click()
-                    time.sleep(0.8)  # Wait for collapse animation
 
                     # Verify it collapsed
                     parent_element = self.find_element(VulnerabilityLocators.EXPAND_COLLAPSE, use_healing=False)
@@ -853,7 +845,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 3: JavaScript click as last resort
                 try:
                     self.driver.execute_script("arguments[0].click();", parent_element)
-                    time.sleep(0.8)
                     print("✅ Vulnerability Options collapsed successfully (JavaScript click)")
                     return True
                 except Exception as js_error:
@@ -862,13 +853,11 @@ class AnalyticsPage(BasePage):
                 # If we got here, retry
                 if attempt < max_retries - 1:
                     print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
-                    time.sleep(1)
                     continue
 
             except (StaleElementReferenceException, TimeoutException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Failed to collapse Vulnerability Options after {max_retries} attempts: {e}")
@@ -876,7 +865,6 @@ class AnalyticsPage(BasePage):
             except Exception as e:
                 print(f"❌ Error in collapse_vulnerability_options: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
                     continue
                 return False
 
@@ -929,12 +917,9 @@ class AnalyticsPage(BasePage):
                     parent_element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
                     if parent_element:
                         self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'auto', block: 'center'});", parent_element)
-                        time.sleep(0.5)
                 except:
                     # Fallback scroll
                     self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
-                    time.sleep(0.5)
-
                 # Click to expand
                 result = self.interact_with_option(
                     GovtResponseLocators.EXPAND_COLLAPSE,
@@ -943,13 +928,11 @@ class AnalyticsPage(BasePage):
                     self.screenshot_dir
                 )
                 if result:
-                    time.sleep(1)  # Wait for expand animation and DOM update
                     return True
 
                 # If interact_with_option returned False, retry
                 if attempt < max_attempts - 1:
                     print(f"⚠️  Expand click failed, retrying (attempt {attempt + 2}/{max_attempts})...")
-                    time.sleep(1.5)
                     continue
 
                 return False
@@ -957,7 +940,6 @@ class AnalyticsPage(BasePage):
             except (StaleElementReferenceException, Exception) as e:
                 if attempt < max_attempts - 1:
                     print(f"⚠️  Error expanding section (attempt {attempt + 1}/{max_attempts}): {str(e)[:80]}")
-                    time.sleep(1.5)
                     continue
                 else:
                     print(f"❌ Failed to expand Government Response section after {max_attempts} attempts")
@@ -975,8 +957,6 @@ class AnalyticsPage(BasePage):
         self._wait_for_page_load_complete()
 
         self.scroll_to_element(GovtResponseLocators.EXPAND_COLLAPSE)
-        time.sleep(0.5)
-
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -995,12 +975,10 @@ class AnalyticsPage(BasePage):
                 try:
                     actions = ActionChains(self.driver)
                     actions.move_to_element(parent_element).perform()
-                    time.sleep(0.8)  # Increased wait time for hover effect
 
                     collapse_button = self.find_element(GovtResponseLocators.COLLAPSE_BUTTON, use_healing=False)
                     if collapse_button and collapse_button.is_displayed():
                         collapse_button.click()
-                        time.sleep(0.8)  # Wait for collapse animation
                         print("✅ Government Response Options collapsed successfully (hover method)")
                         return True
                 except Exception as hover_error:
@@ -1009,7 +987,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 2: Direct click on parent element (toggle behavior)
                 try:
                     parent_element.click()
-                    time.sleep(0.8)  # Wait for collapse animation
 
                     # Verify it collapsed
                     parent_element = self.find_element(GovtResponseLocators.EXPAND_COLLAPSE, use_healing=False)
@@ -1024,7 +1001,6 @@ class AnalyticsPage(BasePage):
                 # APPROACH 3: JavaScript click as last resort
                 try:
                     self.driver.execute_script("arguments[0].click();", parent_element)
-                    time.sleep(0.8)
                     print("✅ Government Response Options collapsed successfully (JavaScript click)")
                     return True
                 except Exception as js_error:
@@ -1033,13 +1009,11 @@ class AnalyticsPage(BasePage):
                 # If we got here, retry
                 if attempt < max_retries - 1:
                     print(f"⚠️ Collapse attempt {attempt + 1} failed, retrying...")
-                    time.sleep(1)
                     continue
 
             except (StaleElementReferenceException, TimeoutException) as e:
                 if attempt < max_retries - 1:
                     print(f"⚠️ Stale element in collapse, retrying ({attempt + 1}/{max_retries})...")
-                    time.sleep(1)
                     continue
                 else:
                     print(f"❌ Failed to collapse Government Response Options after {max_retries} attempts: {e}")
@@ -1047,7 +1021,6 @@ class AnalyticsPage(BasePage):
             except Exception as e:
                 print(f"❌ Error in collapse_govt_response_options: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
                     continue
                 return False
 
