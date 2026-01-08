@@ -294,8 +294,9 @@ class BasePage:
                     print(f"❌ {element_name} not found")
                     return False
 
-                # Wait a moment for dropdown options to load (especially for dependent dropdowns)
-                time.sleep(1)
+                # Wait for dropdown options to populate (especially for dependent dropdowns)
+                from utils.wait_helpers import wait_for_dropdown_options
+                wait_for_dropdown_options(self.driver, locator, timeout=5)
 
                 # Create Select object with fresh element reference
                 select = Select(element)
