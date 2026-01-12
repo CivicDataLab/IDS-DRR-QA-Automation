@@ -33,6 +33,7 @@ pages/          # Page Object Model
 locators/       # Element locators
 config/         # Configuration
 utils/          # Utilities
+scripts/        # Utility scripts (verify_setup, report_gen, etc.)
 conftest.py     # Pytest fixtures
 pytest.ini      # Configuration
 ```
@@ -71,10 +72,32 @@ pytest -n 8 tests/ -v      # 8 workers
 
 ```bash
 # Push to trigger CI/CD
-git push origin main
+git push origin main    # Full test suite
+git push origin dev     # Smoke tests + full suite
 
 # Or manually via GitHub Actions UI
+# Select environment: dev (smoke only), prod (full suite)
 ```
+
+### Cross-Repository Triggers
+
+This test suite can be triggered from external repos (e.g., frontend deployments):
+
+```yaml
+# In your frontend repo's deploy workflow
+- name: Trigger E2E Tests
+  uses: peter-evans/repository-dispatch@v3
+  with:
+    token: ${{ secrets.QA_REPO_PAT }}
+    repository: CivicDataLab/IDS-DRR-QA-Automation
+    event-type: frontend-deployed
+    client-payload: '{"environment": "dev", "commit": "${{ github.sha }}"}'
+```
+
+| Environment | Tests Run |
+|-------------|-----------|
+| `dev` | Smoke tests only |
+| `prod` / `staging` | Full test suite |
 
 ## Test Markers
 
