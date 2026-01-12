@@ -110,7 +110,7 @@ jobs:
           TARGET_ENV: ${{ needs.setup.outputs.environment }}
           URL: ${{ secrets.URL }}
           DEV_URL: ${{ secrets.DEV_URL }}
-          STAGING_URL: ${{ secrets.STAGING_URL }}
+          # STAGING_URL: ${{ secrets.STAGING_URL }}  # Uncomment when staging secret is added
           HOME_URL_4: ${{ secrets.HOME_URL_4 }}
           MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
 
