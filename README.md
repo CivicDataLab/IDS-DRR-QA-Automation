@@ -99,13 +99,31 @@ This test suite can be triggered from external repos (e.g., frontend deployments
 | `dev` | Smoke tests only |
 | `prod` / `staging` | Full test suite |
 
+## Smoke Tests
+
+```bash
+# Run all smoke tests
+pytest -m smoke -v
+
+# Comprehensive all-states smoke test (tests all 5 states with dropdowns + indicators)
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
+
+# Quick smoke tests in parallel
+pytest -n 4 -m smoke -v
+```
+
+The all-states smoke test validates for each state:
+- State selection, View selection (Map), District dropdown, Revenue circle dropdown
+- Section expand/collapse, Indicator selection
+
 ## Test Markers
 
-- `smoke` - Critical tests
+- `smoke` - Critical tests (includes all-states indicator smoke test)
 - `analytics` - Analytics page
 - `dataset` - Dataset page
 - `component` - UI components
 - `flow` - End-to-end flows
+- `multistate` - Multi-state testing
 - `negative` - Error cases
 - `edge_case` - Edge scenarios
 
