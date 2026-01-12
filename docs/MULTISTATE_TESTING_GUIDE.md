@@ -192,6 +192,24 @@ Cross-state analysis:
 - Generates coverage comparison reports
 - Identifies inconsistencies
 
+#### 5. `TestAllStatesIndicatorSmoke` (NEW)
+Comprehensive smoke test for all states:
+- Tests all 5 states in a single flow
+- For each state validates:
+  - State selection from dropdown
+  - View selection (Map view)
+  - District dropdown selection
+  - Revenue circle dropdown selection
+  - Section expand (Hazard)
+  - Indicator selection
+- Provides detailed pass/fail reporting per state
+- Ideal for quick validation after deployments
+
+```bash
+# Run the all-states smoke test
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
+```
+
 ## Usage Examples
 
 ### Test Specific State and Section
@@ -210,6 +228,13 @@ pytest tests/test_analytics.py::TestSectionCoverageByState::test_exposure_sectio
 
 ```bash
 pytest tests/test_analytics.py -v -m smoke
+```
+
+### Run All-States Comprehensive Smoke Test
+
+```bash
+# Tests all 5 states with expanded options (district, revenue circle, indicator)
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
 ```
 
 ### Parallel Execution with Custom Workers

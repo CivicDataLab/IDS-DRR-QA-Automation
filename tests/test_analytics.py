@@ -1211,3 +1211,122 @@ class TestMultiStateEdgeCases:
                 f"Failed to collapse vulnerability in iteration {iteration + 1} for {state_name}"
 
         print(f"✅ Rapid expand/collapse successful for {state_name}")
+
+
+@pytest.mark.analytics
+@pytest.mark.smoke
+@pytest.mark.multistate
+class TestAllStatesIndicatorSmoke:
+    """
+    Smoke Test - Single flow testing one indicator from each state with expanded options validation
+
+    Run: pytest tests/test_analytics.py -v -m smoke -k "TestAllStatesIndicatorSmoke"
+    """
+
+    def test_all_states_with_expanded_options(self, driver):
+        """
+        Smoke test: For each state, test one indicator with key expanded options
+
+        For each state validates:
+        1. State selection works
+        2. View selection (Map view) works
+        3. District dropdown selection works
+        4. Revenue circle dropdown selection works
+        5. Section expand works (hazard)
+        6. Indicator selection works
+        """
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait, Select
+        from selenium.webdriver.support import expected_conditions as EC
+
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        all_states = config_loader.get_all_states()
+
+        def district_dropdown_ready(drv):
+            try:
+                element = drv.find_element(By.XPATH, "//select[contains(@id, 'district') or contains(@class, 'district')]")
+                select = Select(element)
+                return len(select.options) > 1 and element.is_enabled()
+            except:
+                return False
+
+        print(f"\n{'='*70}")
+        print(f"SMOKE TEST - All States with Expanded Options")
+        print(f"Testing {len(all_states)} states: navigation, dropdowns, indicator")
+        print(f"{'='*70}\n")
+
+        results = {'passed': [], 'failed': []}
+
+        for state_key in all_states:
+            state_config = config_loader.get_state_config(state_key)
+            state_name = state_config.get("state_name")
+            checks = []
+
+            print(f"\n[{state_name}]")
+
+            try:
+                # 1. Navigate to analytics
+                assert common_page.navigate_to_analytics(), "Navigation failed"
+                checks.append("navigation")
+
+                # 2. Select state
+                assert analytics_page.select_state(state_name), "State selection failed"
+                checks.append("state_select")
+
+                # 3. Select Map view
+                assert analytics_page.select_view(1), "View selection failed"
+                checks.append("view_select")
+
+                # 4. Wait for and select district
+                try:
+                    WebDriverWait(driver, 15).until(district_dropdown_ready)
+                except:
+                    pass
+
+                district = AnalyticsTestData.get_district_for_state(state_key)
+                assert analytics_page.select_district(district), f"District selection failed"
+                checks.append("district_select")
+
+                # 5. Select revenue circle
+                revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
+                assert analytics_page.select_revenue_circle(revenue_circle), "Revenue circle failed"
+                checks.append("revenue_circle")
+
+                # 6. Expand hazard section and select first indicator
+                hazard_data = state_config.get("sections", {}).get("hazard", {})
+                indicators = [i for i in hazard_data.get("indicators", []) if i.get("enabled", True)]
+
+                if indicators:
+                    indicator_name = indicators[0].get("name")
+                    assert analytics_page.expand_hazard_options(), "Section expand failed"
+                    checks.append("section_expand")
+
+                    assert analytics_page.select_indicator_by_text(indicator_name, "hazard"), "Indicator failed"
+                    checks.append("indicator_select")
+
+                    analytics_page.collapse_hazard_options()
+
+                print(f"  PASSED: {', '.join(checks)}")
+                results['passed'].append(state_name)
+
+            except AssertionError as e:
+                print(f"  FAILED at: {str(e)[:50]}")
+                print(f"  Passed checks: {', '.join(checks)}")
+                results['failed'].append({'state': state_name, 'error': str(e), 'passed': checks})
+
+            except Exception as e:
+                print(f"  ERROR: {str(e)[:50]}")
+                results['failed'].append({'state': state_name, 'error': str(e), 'passed': checks})
+
+        # Summary
+        print(f"\n{'='*70}")
+        print(f"RESULTS: {len(results['passed'])}/{len(all_states)} states passed")
+        if results['failed']:
+            print(f"\nFailed States:")
+            for f in results['failed']:
+                print(f"  - {f['state']}: {f['error'][:60]}")
+        print(f"{'='*70}\n")
+
+        assert len(results['failed']) == 0, f"Failed: {[f['state'] for f in results['failed']]}"

@@ -21,6 +21,9 @@ pytest -n 4 -m smoke -v
 pytest tests/                          # All tests (serial)
 pytest -m smoke                        # Smoke tests only
 
+# All-States Smoke Test (comprehensive - tests all 5 states)
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
+
 # Parallel (Recommended)
 pytest -n 4 tests/                     # 4 workers
 pytest -n auto tests/                  # Auto-detect CPUs
