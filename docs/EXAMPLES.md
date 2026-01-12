@@ -15,7 +15,10 @@ pytest -n 4 tests/ -v
 # Fast validation
 pytest -n auto -m smoke -v
 
-# Use case: CI/CD pre-deployment checks
+# All-states comprehensive smoke test (tests all 5 states with dropdowns + indicators)
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
+
+# Use case: CI/CD pre-deployment checks, post-deployment validation
 ```
 
 ## With Auto-Retry
@@ -189,6 +192,9 @@ pytest -n 4 --reruns 2 tests/ -v
 ```bash
 # Fast validation
 pytest -n auto -m smoke --reruns 2
+
+# All-states comprehensive smoke (recommended for post-deployment)
+pytest -m smoke -k "TestAllStatesIndicatorSmoke" -v
 
 # Full regression
 pytest -n 8 --reruns 1 --html=reports/report.html
