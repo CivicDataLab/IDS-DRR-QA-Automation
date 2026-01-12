@@ -6,10 +6,21 @@ Automated test execution with maximum parallel performance.
 
 ### Triggers
 
-- **Push**: `main`, `develop`, `master` branches
+- **Push**: `main`, `dev` branches
 - **Pull Request**: All PRs
 - **Deployment**: All deployment events
+- **Repository Dispatch**: Cross-repo triggers from frontend
 - **Manual**: Actions tab → Run workflow
+
+### Environment-Based Execution
+
+| Trigger Source | Environment | Tests Run |
+|----------------|-------------|-----------|
+| Frontend deploys to dev | `dev` | Smoke tests only |
+| Frontend deploys to main | `prod` | Full test suite (3 shards) |
+| Push to `dev` branch | - | Smoke + Full suite |
+| Push to `main` branch | - | Smoke + Full suite |
+| Manual trigger | User choice | Based on selection |
 
 ### Parallel Execution
 
@@ -49,8 +60,36 @@ Automated test execution with maximum parallel performance.
 
 Actions tab → QA Test Automation → Run workflow:
 
+- **environment**: dev, staging, prod (default: dev)
 - **workers**: 1-4 (default: 3)
 - **test_marker**: smoke, analytics, dataset, etc.
+
+### Cross-Repository Integration
+
+To trigger tests from another repository (e.g., frontend):
+
+**1. Create a PAT (Personal Access Token)**
+- GitHub → Settings → Developer settings → Fine-grained tokens
+- Repository access: `IDS-DRR-QA-Automation`
+- Permissions: `Contents: Read`, `Actions: Write`
+
+**2. Add to Frontend Repo**
+- Settings → Secrets → Actions → `QA_REPO_PAT`
+
+**3. Add to Frontend Deploy Workflow**
+```yaml
+- name: Trigger E2E Tests
+  uses: peter-evans/repository-dispatch@v3
+  with:
+    token: ${{ secrets.QA_REPO_PAT }}
+    repository: CivicDataLab/IDS-DRR-QA-Automation
+    event-type: frontend-deployed
+    client-payload: |
+      {
+        "environment": "${{ github.ref_name == 'main' && 'prod' || 'dev' }}",
+        "commit": "${{ github.sha }}"
+      }
+```
 
 ### Artifacts
 
