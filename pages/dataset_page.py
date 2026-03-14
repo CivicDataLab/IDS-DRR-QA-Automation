@@ -12,6 +12,11 @@ class DatasetPage(BasePage):
 
     def apply_source_filter_drims(self):
         """Apply DRIMS source filter"""
+        # Guard: check the filter element exists (no self-healing) to confirm we're on the right page.
+        # Self-healing relaxed XPath can match arbitrary buttons on wrong pages, so skip it here.
+        if not self.find_element(DatasetPageLocators.SOURCE_FILTER_DRIMS, use_healing=False):
+            print("❌ Source filter element not found — not on datasets listing page")
+            return False
         return self.click_and_screenshot(
             DatasetPageLocators.SOURCE_FILTER_DRIMS,
             "DRIMS Filter",
@@ -67,6 +72,9 @@ class DatasetInfoPage(BasePage):
 
     def view_visualization_1(self):
         """Scroll to and view first visualization"""
+        if "/dataset" not in self.driver.current_url.lower():
+            print("❌ Not on a dataset info page — cannot view visualization")
+            return False
         element = self.find_element(DatasetInfoPageLocators.VISUALIZATION_1)
         if element:
             self.scroll_to_element(DatasetInfoPageLocators.VISUALIZATION_1)
@@ -77,17 +85,35 @@ class DatasetInfoPage(BasePage):
             print("❌ Visualization 1 not found")
             return False
 
+    def _js_click(self, element):
+        """Click element via JavaScript to bypass interactability issues (off-screen, overlapping)."""
+        self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", element)
+        self.driver.execute_script("arguments[0].click();", element)
+
     def view_visualization_2(self):
-        """View alternate visualization"""
+        """View alternate visualization and return to visualization 1."""
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+
+        # Scroll to the visualization widget before interacting
+        self.scroll_to_element(DatasetInfoPageLocators.VISUALIZATION_1)
+
         success = self.click(DatasetInfoPageLocators.VISUALIZATION_2_BUTTON, "Visualization 2")
         if success:
             self.take_screenshot("infra_damage_visualization.png", self.screenshot_dir)
-            # Go back to first visualization
+            # Wait briefly for the viz to render before clicking back
+            try:
+                WebDriverWait(self.driver, 5).until(
+                    EC.presence_of_element_located(DatasetInfoPageLocators.VISUALIZATION_2_BACK_BUTTON)
+                )
+            except Exception:
+                pass
             self.click(DatasetInfoPageLocators.VISUALIZATION_2_BACK_BUTTON, "Back to Visualization 1")
         return success
 
     def download_visualization(self):
         """Click visualization download button"""
+        self.scroll_to_element(DatasetInfoPageLocators.VISUALIZATION_DOWNLOAD)
         return self.click(DatasetInfoPageLocators.VISUALIZATION_DOWNLOAD, "Visualization Download")
 
     def click_category_link(self):
@@ -100,20 +126,32 @@ class DatasetInfoPage(BasePage):
 
     def download_all_datasets(self):
         """Download all available dataset files"""
+        if "/dataset" not in self.driver.current_url.lower():
+            print("❌ Not on a dataset info page — cannot download datasets")
+            return False
         download_buttons = [
-            (DatasetInfoPageLocators.DOWNLOAD_DATASET_1, False),
-            (DatasetInfoPageLocators.DOWNLOAD_DATASET_2, False),
-            (DatasetInfoPageLocators.DOWNLOAD_DATASET_3, True),  # Need scroll
-            (DatasetInfoPageLocators.DOWNLOAD_DATASET_4, False)
+            DatasetInfoPageLocators.DOWNLOAD_DATASET_1,
+            DatasetInfoPageLocators.DOWNLOAD_DATASET_2,
+            DatasetInfoPageLocators.DOWNLOAD_DATASET_3,
+            DatasetInfoPageLocators.DOWNLOAD_DATASET_4,
         ]
 
         success_count = 0
-        for idx, (locator, needs_scroll) in enumerate(download_buttons, 1):
-            if needs_scroll:
-                self.scroll_to_element(locator)
-
-            if self.click(locator, f"Download Dataset {idx}"):
-                success_count += 1
+        for idx, locator in enumerate(download_buttons, 1):
+            # Always scroll each button into view before clicking (some may be off-screen)
+            element = self.find_element(locator)
+            if element:
+                try:
+                    self._js_click(element)
+                    print(f"✅ Download Dataset {idx} clicked successfully")
+                    success_count += 1
+                except Exception as e:
+                    print(f"❌ Download Dataset {idx} JS click failed: {e}")
+                    # Fallback: regular click via base_page
+                    if self.click(locator, f"Download Dataset {idx}"):
+                        success_count += 1
+            else:
+                print(f"❌ Download Dataset {idx} element not found")
 
         print(f"✅ Downloaded {success_count}/{len(download_buttons)} datasets")
         return success_count == len(download_buttons)

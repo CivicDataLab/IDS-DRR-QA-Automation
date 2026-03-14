@@ -306,35 +306,16 @@ class TestMultiStateIndicatorsMapView:
         assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
         assert analytics_page.select_view(1), f"❌ Failed to select Map view"
 
-        # Wait for district dropdown to be ready after view selection (uses explicit wait)
-        from selenium.webdriver.support.ui import WebDriverWait, Select
+        from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
         from selenium.webdriver.common.by import By
-        from utils.wait_helpers import wait_for_dropdown_options
-        import time
+        from utils.wait_helpers import wait_for_loading_to_disappear, wait_for_any_condition
 
-        # Define helper function for this test
-        def district_dropdown_ready(driver):
-            try:
-                element = driver.find_element(By.XPATH, "//select[contains(@id, 'district') or contains(@class, 'district')]")
-                select = Select(element)
-                return len(select.options) > 1 and element.is_enabled()
-            except:
-                return False
-
-        # Wait for dropdown using explicit wait
-        try:
-            WebDriverWait(driver, 15).until(district_dropdown_ready)
-        except:
-            pass  # Continue if timeout
-
-        # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
+        # Select district and revenue circle — select_district() waits for the dropdown to populate
         district = AnalyticsTestData.get_district_for_state(state_key)
         revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
-
-        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -402,15 +383,7 @@ class TestMultiStateIndicatorsMapView:
                     assert common_page.navigate_to_analytics(), "❌ Recovery failed: Cannot navigate to Analytics"
                     assert analytics_page.select_state(state_name), f"❌ Recovery failed: Cannot select state {state_name}"
                     assert analytics_page.select_view(1), "❌ Recovery failed: Cannot select Map view"
-
-                    # Wait for district dropdown to be ready
-                    try:
-                        WebDriverWait(driver, 15).until(district_dropdown_ready)
-                    except:
-                        pass
-
                     assert analytics_page.select_district(district), f"❌ Recovery failed: Cannot select district {district}"
-                    # Revenue circle has its own explicit wait
                     assert analytics_page.select_revenue_circle(revenue_circle), f"❌ Recovery failed: Cannot select revenue circle {revenue_circle}"
                     assert expand_method(), f"❌ Recovery failed: Cannot expand {section}"
                     print(f"  ✅ Recovery complete - continuing with next indicator")
@@ -456,15 +429,7 @@ class TestMultiStateIndicatorsMapView:
                         common_page.navigate_to_analytics()
                         analytics_page.select_state(state_name)
                         analytics_page.select_view(1)
-
-                        # Wait for district dropdown to be ready
-                        try:
-                            WebDriverWait(driver, 15).until(district_dropdown_ready)
-                        except:
-                            pass
-
                         analytics_page.select_district(district)
-                        # Revenue circle has its own explicit wait
                         analytics_page.select_revenue_circle(revenue_circle)
                         expand_method()
                         print(f"  ✅ Recovery complete")
@@ -693,23 +658,16 @@ class TestMultiStateIndicatorsChartView:
         print(f"{'='*80}\n")
 
         # Setup ONCE
-        assert common_page.navigate_to_analytics()
-        assert analytics_page.select_state(state_name)
-        assert analytics_page.select_view(2)  # Chart view
+        assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics"
+        assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
+        assert analytics_page.select_view(2), f"❌ Failed to select Chart view"  # Chart view
 
-        # Wait for district dropdown to be ready using explicit wait
-        try:
-            WebDriverWait(driver, 15).until(district_dropdown_ready)
-        except:
-            pass
-
-        # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
+        # District and revenue circle dropdowns appear after view selection.
+        # select_district() waits internally for the dropdown to be populated.
         district = AnalyticsTestData.get_district_for_state(state_key)
         revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
-
-        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -720,7 +678,9 @@ class TestMultiStateIndicatorsChartView:
             "government_response": analytics_page.expand_govt_response_options
         }
         expand_method = section_expand_methods.get(section)
-        assert expand_method()
+        assert expand_method, f"❌ Unknown section: {section}"
+        assert expand_method(), f"❌ Failed to expand {section}"
+        print(f"✅ {section.replace('_', ' ').title()} section expanded - testing all indicators\n")
 
         passed, failed = [], []
 
@@ -737,7 +697,6 @@ class TestMultiStateIndicatorsChartView:
                 wait = WebDriverWait(driver, 20)
 
                 try:
-                    # Explicit wait already handles timing - no sleep needed
                     chart_element = wait.until(EC.visibility_of_element_located(
                         (By.CSS_SELECTOR, "canvas, svg, .chart, [class*='chart']")))
 
@@ -749,8 +708,22 @@ class TestMultiStateIndicatorsChartView:
                         print(f"  ❌ Chart not displayed")
 
                 except Exception as e:
-                    failed.append({'name': indicator_name, 'reason': f'Chart validation failed: {str(e)[:80]}'})
-                    print(f"  ❌ Chart validation failed")
+                    if analytics_page.is_error_page_displayed():
+                        print(f"  ⚠️  Application error page detected - recovering...")
+                        failed.append({'name': indicator_name, 'reason': 'Application crashed with error page'})
+                        analytics_page.take_screenshot(f"error_{state_key}_{section}_{idx}_chart", analytics_page.screenshot_dir)
+
+                        # Recover: re-navigate and re-setup state/view/district/section
+                        common_page.navigate_to_analytics()
+                        analytics_page.select_state(state_name)
+                        analytics_page.select_view(2)
+                        analytics_page.select_district(district)
+                        analytics_page.select_revenue_circle(revenue_circle)
+                        expand_method()
+                        print(f"  ✅ Recovery complete")
+                    else:
+                        failed.append({'name': indicator_name, 'reason': f'Chart validation failed: {str(e)[:80]}'})
+                        print(f"  ❌ Chart validation failed")
 
             except Exception as e:
                 failed.append({'name': indicator_name, 'reason': f'Error: {str(e)[:80]}'})
@@ -800,23 +773,16 @@ class TestMultiStateIndicatorsTableView:
         print(f"{'='*80}\n")
 
         # Setup ONCE
-        assert common_page.navigate_to_analytics()
-        assert analytics_page.select_state(state_name)
-        assert analytics_page.select_view(3)  # Table view
+        assert common_page.navigate_to_analytics(), f"❌ Failed to navigate to Analytics"
+        assert analytics_page.select_state(state_name), f"❌ Failed to select state: {state_name}"
+        assert analytics_page.select_view(3), f"❌ Failed to select Table view"  # Table view
 
-        # Wait for district dropdown to be ready using explicit wait
-        try:
-            WebDriverWait(driver, 15).until(district_dropdown_ready)
-        except:
-            pass
-
-        # Select district and revenue circle AFTER view selection (dropdowns appear after view is selected)
+        # District and revenue circle dropdowns appear after view selection.
+        # select_district() waits internally for the dropdown to be populated.
         district = AnalyticsTestData.get_district_for_state(state_key)
         revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
         assert analytics_page.select_district(district), \
             f"❌ Failed to select district: {district}"
-
-        # Revenue circle dropdown uses explicit wait internally - no sleep needed
         assert analytics_page.select_revenue_circle(revenue_circle), \
             f"❌ Failed to select revenue circle: {revenue_circle}"
 
@@ -827,7 +793,9 @@ class TestMultiStateIndicatorsTableView:
             "government_response": analytics_page.expand_govt_response_options
         }
         expand_method = section_expand_methods.get(section)
-        assert expand_method()
+        assert expand_method, f"❌ Unknown section: {section}"
+        assert expand_method(), f"❌ Failed to expand {section}"
+        print(f"✅ {section.replace('_', ' ').title()} section expanded - testing all indicators\n")
 
         passed, failed = [], []
 
@@ -844,7 +812,6 @@ class TestMultiStateIndicatorsTableView:
                 wait = WebDriverWait(driver, 20)
 
                 try:
-                    # Explicit wait already handles timing - no sleep needed
                     table_element = wait.until(EC.visibility_of_element_located(
                         (By.CSS_SELECTOR, "table, .table, [class*='table']")))
 
@@ -856,8 +823,22 @@ class TestMultiStateIndicatorsTableView:
                         print(f"  ❌ Table not displayed")
 
                 except Exception as e:
-                    failed.append({'name': indicator_name, 'reason': f'Table validation failed: {str(e)[:80]}'})
-                    print(f"  ❌ Table validation failed")
+                    if analytics_page.is_error_page_displayed():
+                        print(f"  ⚠️  Application error page detected - recovering...")
+                        failed.append({'name': indicator_name, 'reason': 'Application crashed with error page'})
+                        analytics_page.take_screenshot(f"error_{state_key}_{section}_{idx}_table", analytics_page.screenshot_dir)
+
+                        # Recover: re-navigate and re-setup state/view/district/section
+                        common_page.navigate_to_analytics()
+                        analytics_page.select_state(state_name)
+                        analytics_page.select_view(3)
+                        analytics_page.select_district(district)
+                        analytics_page.select_revenue_circle(revenue_circle)
+                        expand_method()
+                        print(f"  ✅ Recovery complete")
+                    else:
+                        failed.append({'name': indicator_name, 'reason': f'Table validation failed: {str(e)[:80]}'})
+                        print(f"  ❌ Table validation failed")
 
             except Exception as e:
                 failed.append({'name': indicator_name, 'reason': f'Error: {str(e)[:80]}'})
@@ -1029,6 +1010,9 @@ class TestMultiStateCompleteFlow:
         assert common_page.navigate_to_analytics(), f"Failed to navigate to analytics for {state_name}"
         assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
 
+        district = AnalyticsTestData.get_district_for_state(state_key)
+        revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
+
         # Test all views
         view_data = [
             {'view_index': 1, 'view_name': 'Map', 'prefix': 'map_'},
@@ -1042,6 +1026,13 @@ class TestMultiStateCompleteFlow:
             # Select view
             assert analytics_page.select_view(view['view_index']), \
                 f"Failed to select {view['view_name']} view for {state_name}"
+
+            # All views require district and revenue circle selection.
+            # select_district() waits internally for the dropdown to be populated.
+            assert analytics_page.select_district(district), \
+                f"Failed to select district for {view['view_name']} view in {state_name}"
+            assert analytics_page.select_revenue_circle(revenue_circle), \
+                f"Failed to select revenue circle for {view['view_name']} view in {state_name}"
 
             analytics_page.take_analytics_screenshot(
                 f"{state_key}_{view['prefix']}",
@@ -1235,22 +1226,10 @@ class TestAllStatesIndicatorSmoke:
         5. Section expand works (hazard)
         6. Indicator selection works
         """
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait, Select
-        from selenium.webdriver.support import expected_conditions as EC
-
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
         all_states = config_loader.get_all_states()
-
-        def district_dropdown_ready(drv):
-            try:
-                element = drv.find_element(By.XPATH, "//select[contains(@id, 'district') or contains(@class, 'district')]")
-                select = Select(element)
-                return len(select.options) > 1 and element.is_enabled()
-            except:
-                return False
 
         print(f"\n{'='*70}")
         print(f"SMOKE TEST - All States with Expanded Options")
@@ -1279,12 +1258,7 @@ class TestAllStatesIndicatorSmoke:
                 assert analytics_page.select_view(1), "View selection failed"
                 checks.append("view_select")
 
-                # 4. Wait for and select district
-                try:
-                    WebDriverWait(driver, 15).until(district_dropdown_ready)
-                except:
-                    pass
-
+                # 4. Select district — select_district() waits internally for dropdown to populate
                 district = AnalyticsTestData.get_district_for_state(state_key)
                 assert analytics_page.select_district(district), f"District selection failed"
                 checks.append("district_select")

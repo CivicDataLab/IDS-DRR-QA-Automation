@@ -25,6 +25,16 @@ class DriverFactory:
         options.add_argument('--disable-logging')
         options.add_argument('--log-level=3')  # Suppress logs
 
+        # Faster browser startup
+        options.add_argument('--no-first-run')
+        options.add_argument('--no-default-browser-check')
+        options.add_argument('--disable-background-networking')
+        options.add_argument('--disable-sync')
+        options.add_argument('--disable-translate')
+        options.add_argument('--disable-default-apps')
+        options.add_argument('--metrics-recording-only')
+        options.add_argument('--disable-component-extensions-with-background-pages')
+
         # Disable unnecessary features for speed
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
         options.add_experimental_option('prefs', {
@@ -52,9 +62,6 @@ class DriverFactory:
         # Set timeouts for better performance
         driver.set_page_load_timeout(Config.PAGE_LOAD_TIMEOUT)
         driver.implicitly_wait(Config.IMPLICIT_WAIT)
-
-        # Load homepage
-        driver.get(Config.BASE_URL)
 
         return driver
 
