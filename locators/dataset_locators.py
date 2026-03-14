@@ -25,15 +25,19 @@ class DatasetInfoPageLocators:
 
     # Visualizations
     VISUALIZATION_1 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div")
-    VISUALIZATION_2_BUTTON = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[3]/button")
-    VISUALIZATION_2_BACK_BUTTON = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[2]/button")
-    VISUALIZATION_DOWNLOAD = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div/div[1]/div/div[2]/div[2]/button[2]")
+    # Button to switch to the next/alternate visualization (try div[3] then div[2] as fallback)
+    VISUALIZATION_2_BUTTON = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[3]/button | /html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[2]/button[last()]")
+    # Back button to return to visualization 1
+    VISUALIZATION_2_BACK_BUTTON = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[2]/button | /html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/button[last()]")
+    # Download/export button for the visualization chart
+    VISUALIZATION_DOWNLOAD = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div/div[1]/div/div[2]/div[2]/button[2] | /html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div/div[1]/div/div[2]/div[1]/button[last()]")
 
     # Metadata
     CATEGORY_LINK = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[2]/div/div/div[2]/div[8]/div/a")
 
-    # Download buttons
-    DOWNLOAD_DATASET_1 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[2]/div/div[1]/div[2]/a/button")
-    DOWNLOAD_DATASET_2 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[2]/div/div[2]/div[2]/a/button")
-    DOWNLOAD_DATASET_3 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[2]/div/div[3]/div[2]/a/button")
-    DOWNLOAD_DATASET_4 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[2]/div/div[4]/div[2]/a/button")
+    # Download buttons — anchor tags wrapping buttons (file download links), indexed by position.
+    # Using main-relative XPath so they survive minor layout changes.
+    DOWNLOAD_DATASET_1 = (By.XPATH, "(//main//a[.//button])[1]//button")
+    DOWNLOAD_DATASET_2 = (By.XPATH, "(//main//a[.//button])[2]//button")
+    DOWNLOAD_DATASET_3 = (By.XPATH, "(//main//a[.//button])[3]//button")
+    DOWNLOAD_DATASET_4 = (By.XPATH, "(//main//a[.//button])[4]//button")

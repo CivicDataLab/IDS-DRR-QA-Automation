@@ -16,9 +16,9 @@ class BasePage:
         self.driver = driver
         self.wait = WebDriverWait(driver, Config.DEFAULT_TIMEOUT)
         self.short_wait = WebDriverWait(driver, Config.SHORT_TIMEOUT)
-        # Initialize self-healing capabilities
+        # Initialize self-healing capabilities (share one healer to avoid duplicate file I/O)
         self.healer = SelfHealingLocator(driver, Config.DEFAULT_TIMEOUT)
-        self.element_finder = ElementFinder(driver, Config.DEFAULT_TIMEOUT)
+        self.element_finder = ElementFinder(driver, Config.DEFAULT_TIMEOUT, healer=self.healer)
 
     def find_element(self, locator, timeout=None, use_healing=True):
         """

@@ -64,6 +64,7 @@ def pytest_configure(config):
         "Browser": "Chrome",
         "Timeout": f"{Config.DEFAULT_TIMEOUT}s",
         "Self-Healing": "Enabled" if not config.getoption("--disable-healing", False) else "Disabled",
+        "Learned Locators": "Disabled" if config.getoption("--no-learned-locators", False) else "Enabled",
         "Timestamp": timestamp
     }
 
@@ -82,6 +83,7 @@ def driver(request):
     driver = DriverFactory.create_driver()
     driver._healing_events = []
     driver._test_name = request.node.nodeid
+    driver.get(Config.BASE_URL)
 
     yield driver
 
@@ -110,6 +112,7 @@ def driver_session():
         WebDriver: Configured WebDriver instance
     """
     driver = DriverFactory.create_driver()
+    driver.get(Config.BASE_URL)
     yield driver
     DriverFactory.quit_driver(driver)
 
@@ -179,6 +182,18 @@ def pytest_addoption(parser):
         default=False,
         help="Disable self-healing locators"
     )
+    parser.addoption(
+        "--no-learned-locators",
+        action="store_true",
+        default=False,
+        help="Disable loading and using previously learned locators"
+    )
+
+
+def pytest_sessionstart(session):
+    """Set env vars based on CLI options before tests run"""
+    if session.config.getoption("--no-learned-locators", False):
+        os.environ["DISABLE_LEARNED_LOCATORS"] = "true"
 
 
 def pytest_html_results_table_header(cells):
