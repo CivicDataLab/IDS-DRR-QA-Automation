@@ -261,12 +261,39 @@ class AnalyticsPage(BasePage):
 
         return False
 
+    def wait_for_district_dropdown(self, timeout=20):
+        """
+        Wait for the district dropdown to appear and have selectable options.
+
+        This is called after selecting a view (Chart/Table/Map) because the district
+        dropdown is only rendered once a view is active. Uses the actual DISTRICT_SELECT
+        locator so the wait is consistent with the selection step.
+
+        Returns:
+            bool: True if dropdown is ready, False if timed out
+        """
+        from utils.wait_helpers import wait_for_dropdown_options
+        print(f"⏳ Waiting for district dropdown to be ready...")
+        ready = wait_for_dropdown_options(
+            self.driver,
+            AnalyticsPageLocators.DISTRICT_SELECT,
+            timeout=timeout,
+            min_options=1
+        )
+        if ready:
+            print(f"✅ District dropdown ready")
+        else:
+            print(f"⚠️ District dropdown did not populate within {timeout}s")
+        return ready
+
     def select_district(self, district_name):
         """Select district from dropdown and wait for revenue circle dropdown to be ready"""
         from utils.wait_helpers import wait_for_dropdown_options
 
-        # Wait for page load to complete before interacting with district dropdown
-        self._wait_for_page_load_complete()
+        # Wait for district dropdown to have options before attempting selection.
+        # The dropdown is dynamically rendered after view selection, so we must
+        # wait for it explicitly — page load complete alone is not sufficient.
+        self.wait_for_district_dropdown(timeout=20)
 
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.DISTRICT_SELECT,

@@ -25,6 +25,9 @@ class SelfHealingLocator:
     # Directory to store learned locators
     LEARNED_LOCATORS_FILE = "config/learned_locators.json"
 
+    # Session-level cache — loaded once, shared across all instances
+    _locators_cache = None
+
     def __init__(self, driver, timeout=10):
         self.driver = driver
         self.timeout = timeout
@@ -32,15 +35,24 @@ class SelfHealingLocator:
         self._load_learned_locators()
 
     def _load_learned_locators(self):
-        """Load previously learned locators from file"""
-        self.learned_locators = {}
-        if os.path.exists(self.LEARNED_LOCATORS_FILE):
-            try:
-                with open(self.LEARNED_LOCATORS_FILE, 'r') as f:
-                    self.learned_locators = json.load(f)
-                logger.info(f"Loaded {len(self.learned_locators)} learned locators")
-            except Exception as e:
-                logger.warning(f"Could not load learned locators: {e}")
+        """Load previously learned locators from file (cached per session)"""
+        if os.environ.get("DISABLE_LEARNED_LOCATORS", "").lower() == "true":
+            self.learned_locators = {}
+            logger.info("Learned locators disabled via --no-learned-locators")
+            return
+
+        if SelfHealingLocator._locators_cache is None:
+            cache = {}
+            if os.path.exists(self.LEARNED_LOCATORS_FILE):
+                try:
+                    with open(self.LEARNED_LOCATORS_FILE, 'r') as f:
+                        cache = json.load(f)
+                    logger.info(f"Loaded {len(cache)} learned locators from disk")
+                except Exception as e:
+                    logger.warning(f"Could not load learned locators: {e}")
+            SelfHealingLocator._locators_cache = cache
+
+        self.learned_locators = SelfHealingLocator._locators_cache
 
     def _save_learned_locator(self, original_locator, successful_locator, element_text=""):
         """Save a successful locator for future use"""
@@ -52,6 +64,9 @@ class SelfHealingLocator:
             "timestamp": datetime.now().isoformat(),
             "use_count": self.learned_locators.get(locator_key, {}).get("use_count", 0) + 1
         }
+
+        # Keep class-level cache in sync
+        SelfHealingLocator._locators_cache = self.learned_locators
 
         # Save to file
         try:
@@ -270,10 +285,11 @@ class ElementFinder:
     Enhanced element finder with retry and multiple location strategies
     """
 
-    def __init__(self, driver, timeout=10):
+    def __init__(self, driver, timeout=10, healer=None):
         self.driver = driver
         self.timeout = timeout
-        self.healer = SelfHealingLocator(driver, timeout)
+        # Reuse an existing healer if provided to avoid redundant file I/O
+        self.healer = healer if healer is not None else SelfHealingLocator(driver, timeout)
 
     def find_with_retry(self, locator, element_name="Element", max_retries=3, retry_delay=1):
         """

@@ -4,20 +4,18 @@ from selenium.webdriver.common.by import By
 class HeaderLocators:
     """Locators for header/navigation elements"""
 
-    # Navigation links
-    HOME_LINK = (By.XPATH, "//span[normalize-space()='Home']")
-    ANALYTICS_LINK = (By.XPATH, "//span[normalize-space()='Analytics']")
-    DATASETS_LINK = (By.XPATH, "//span[normalize-space()='Datasets']")
-    ABOUT_US_LINK = (By.XPATH, "//span[normalize-space()='About us']")
-
-    
+    # Navigation links — absolute position-based paths that work reliably
+    HOME_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[1]/div/span")
+    ANALYTICS_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[2]/div/span")
+    DATASETS_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[3]/div/span")
+    ABOUT_US_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[4]/div/span")
 
     # Alternative locators using position (fallback)
     ANALYTICS_LINK_ALT = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[2]/div/span")
     DATASETS_LINK_ALT = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[3]/div/span")
 
     # Logo
-    HEADER_LOGO = (By.XPATH, "//a[normalize-space()='']//img[@alt='IDS-DRR Logo']")
+    HEADER_LOGO = (By.XPATH, "//header//img[@alt='IDS-DRR Logo']")
 
     # Language dropdown
     LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
