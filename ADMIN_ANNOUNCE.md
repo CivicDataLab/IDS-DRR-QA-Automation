@@ -26,8 +26,8 @@ git reset --hard origin/main
 - Required secrets: `URL`, `DEV_URL`, `HOME_URL_4`, `HOME_URL_USERNAME`, `HOME_URL_PASSWORD`, `QA_REPO_PAT`.
 
 5. Contact & support:
-- Maintainers: @maintainer1, @maintainer2
-- Security: replace `leave-the-email-for-now` in `SECURITY.md` with a monitored contact.
+- Maintainers: @saqibmanan
+- Security: tech@civicdatalab.in (see `SECURITY.md`)
 
 Admin notes:
 - Backups and pre-rewrite scans are available to admins at `/Users/home/repo-backups` on the admin machine.
