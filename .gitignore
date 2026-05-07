@@ -100,3 +100,6 @@ node_modules/
 *.bak
 *.backup
 *~
+
+# Claude Code project notes (kept local)
+CLAUDE.md
