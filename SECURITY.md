@@ -3,7 +3,7 @@ Security Policy
 If you discover a security vulnerability in this repository, please report it to the maintainers.
 
 Contact
-- Email: leave-the-email-for-now
+- Email: tech@civicdatalab.in
 
 Guidelines
 - Do not create a public issue for vulnerability reports. Contact the security address above.
@@ -13,5 +13,3 @@ Guidelines
 After disclosure
 - We will publish a short advisory after the issue is resolved, unless disclosure would cause harm.
 
---
-Replace the placeholder contact with a monitored security email before making the repository public.
