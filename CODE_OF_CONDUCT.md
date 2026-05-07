@@ -12,5 +12,4 @@ If you experience or witness unacceptable behavior, please contact the maintaine
 
 For the full text and details, see: https://www.contributor-covenant.org/version/2/1/code_of_conduct/
 
---
-Note: Replace this file with the full Contributor Covenant text or an organization-specific variant before public release.
+To report a Code of Conduct concern, contact the maintainers at tech@civicdatalab.in.
