@@ -1,0 +1,213 @@
+state_name: Himachal pradesh
+state_key: himachal_pradesh
+discovered_at: '2026-01-06T15:31:37.785064'
+sections:
+  hazard:
+    name: Hazard
+    indicators:
+    - name: Total Monthly Rainfall
+      key: total_monthly_rainfall
+      position: 1
+      enabled: true
+      section: Hazard
+    - name: Mean Runoff
+      key: mean_runoff
+      position: 2
+      enabled: true
+      section: Hazard
+    - name: Mean Elevation
+      key: mean_elevation
+      position: 3
+      enabled: true
+      section: Hazard
+    - name: Mean slope
+      key: mean_slope
+      position: 4
+      enabled: true
+      section: Hazard
+    - name: Drainage density
+      key: drainage_density
+      position: 5
+      enabled: true
+      section: Hazard
+    - name: Average distance from a river
+      key: average_distance_from_a_river
+      position: 6
+      enabled: true
+      section: Hazard
+  exposure:
+    name: Exposure
+    indicators:
+    - name: Total Number of Households
+      key: total_number_of_households
+      position: 1
+      enabled: true
+      section: Exposure
+    - name: Population
+      key: population
+      position: 2
+      enabled: true
+      section: Exposure
+    - name: Number of Schools
+      key: number_of_schools
+      position: 3
+      enabled: true
+      section: Exposure
+    - name: Length of rail in the region
+      key: length_of_rail_in_the_region
+      position: 4
+      enabled: true
+      section: Exposure
+    - name: Length of Road aggregated by Tehsil
+      key: length_of_road_aggregated_by_tehsil
+      position: 5
+      enabled: true
+      section: Exposure
+    - name: Net Sown Area
+      key: net_sown_area
+      position: 6
+      enabled: true
+      section: Exposure
+    - name: Mean Sex Ratio
+      key: mean_sex_ratio
+      position: 7
+      enabled: true
+      section: Exposure
+  vulnerability:
+    name: Vulnerability
+    indicators:
+    - name: Total count of livestock lost
+      key: total_count_of_livestock_lost
+      position: 1
+      enabled: true
+      section: Vulnerability
+    - name: Number of schools damaged
+      key: number_of_schools_damaged
+      position: 2
+      enabled: true
+      section: Vulnerability
+    - name: Number of human lives lost
+      key: number_of_human_lives_lost
+      position: 3
+      enabled: true
+      section: Vulnerability
+    - name: Number of people with major injuries
+      key: number_of_people_with_major_injuries
+      position: 4
+      enabled: true
+      section: Vulnerability
+    - name: Total built structures lost
+      key: total_built_structures_lost
+      position: 5
+      enabled: true
+      section: Vulnerability
+    - name: Total number of health centres lost
+      key: total_number_of_health_centres_lost
+      position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Total Infrastructure Damage
+      key: total_infrastructure_damage
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Length of roads damaged in ULB's
+      key: length_of_roads_damaged_in_ulb_s
+      position: 8
+      enabled: true
+      section: Vulnerability
+    - name: Average availability of domestic electricity
+      key: average_availability_of_domestic_electricity
+      position: 9
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households with piped water connection
+      key: percentage_of_households_with_piped_water_connection
+      position: 10
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households without sanitation facilities
+      key: percentage_of_households_without_sanitation_facilities
+      position: 11
+      enabled: true
+      section: Vulnerability
+    - name: Elderly population
+      key: elderly_population
+      position: 12
+      enabled: true
+      section: Vulnerability
+    - name: Children population
+      key: children_population
+      position: 13
+      enabled: true
+      section: Vulnerability
+    - name: Financial Vulnerability Index
+      key: financial_vulnerability_index
+      position: 14
+      enabled: true
+      section: Vulnerability
+    - name: Social Vulnerability Index
+      key: social_vulnerability_index
+      position: 15
+      enabled: true
+      section: Vulnerability
+    - name: Natural Vulnerability Index
+      key: natural_vulnerability_index
+      position: 16
+      enabled: true
+      section: Vulnerability
+    - name: Human Vulnerability Index
+      key: human_vulnerability_index
+      position: 17
+      enabled: true
+      section: Vulnerability
+    - name: Physical Vulnerability Index
+      key: physical_vulnerability_index
+      position: 18
+      enabled: true
+      section: Vulnerability
+    - name: Composite Vulnerability Index
+      key: composite_vulnerability_index
+      position: 19
+      enabled: true
+      section: Vulnerability
+  government_response:
+    name: Government Response
+    indicators:
+    - name: Total Flood Tenders Value
+      key: total_flood_tenders_value
+      position: 1
+      enabled: true
+      section: Government Response
+    - name: 'Flood Tenders Under SDRF: Total value'
+      key: flood_tenders_under_sdrf_total_value
+      position: 2
+      enabled: true
+      section: Government Response
+    - name: 'Repairs and Restoration Flood Tenders : Total Value'
+      key: repairs_and_restoration_flood_tenders_total_value
+      position: 3
+      enabled: true
+      section: Government Response
+    - name: 'Immediate Measure Flood Tenders : Total Value'
+      key: immediate_measure_flood_tenders_total_value
+      position: 4
+      enabled: true
+      section: Government Response
+    - name: 'Other flood tenders : Total value of non restoration and preparedness
+        tenders'
+      key: other_flood_tenders_total_value_of_non_restoration_and_preparedness_tenders
+      position: 5
+      enabled: true
+      section: Government Response
+    - name: 'Disaster relief and mitigation funds : Total Value (not available at
+        Tehsil level)'
+      key: disaster_relief_and_mitigation_funds_total_value_not_available_at_tehsil_level
+      position: 6
+      enabled: true
+      section: Government Response
+    - name: 'Preparedness Measures Flood Tenders : Total Value'
+      key: preparedness_measures_flood_tenders_total_value
+      position: 7
+      enabled: true
+      section: Government Response
