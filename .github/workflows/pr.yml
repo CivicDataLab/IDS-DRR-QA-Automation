@@ -1,0 +1,23 @@
+name: PR Smoke
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/pull_request_template.md"
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: 1
+      workers: 4
+      target_env: dev
+    secrets: inherit
