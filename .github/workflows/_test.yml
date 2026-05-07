@@ -52,6 +52,8 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
     steps:
+      - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-test-env
 
       - name: Bootstrap state configs if missing
