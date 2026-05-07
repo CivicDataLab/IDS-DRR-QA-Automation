@@ -1,0 +1,28 @@
+name: Nightly Multistate
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: Target environment
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  multistate:
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: multistate
+      shards: 4
+      workers: 2
+      target_env: ${{ inputs.target_env || 'dev' }}
+      test_path: tests/test_analytics.py
+      bootstrap_states: true
+    secrets: inherit

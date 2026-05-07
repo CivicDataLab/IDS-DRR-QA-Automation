@@ -1,0 +1,113 @@
+name: Dispatch Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Which test mode to run
+        type: choice
+        options: [smoke, multistate, main-deploy, full]
+        default: smoke
+      target_env:
+        description: Target environment
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+  repository_dispatch:
+    types: [frontend-deployed, backend-deployed]
+
+concurrency:
+  group: dispatch-${{ github.event.action || github.event.inputs.scope }}-${{ github.event.client_payload.environment || github.event.inputs.target_env }}
+  cancel-in-progress: false
+
+jobs:
+  log:
+    name: Log dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show context
+        shell: bash
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "Source repo: ${{ github.event.client_payload.source_repo }}"
+            echo "Environment: ${{ github.event.client_payload.environment }}"
+            echo "Commit: ${{ github.event.client_payload.commit }}"
+            echo "Actor: ${{ github.event.client_payload.actor }}"
+          else
+            echo "Scope: ${{ inputs.scope }}"
+            echo "Target env: ${{ inputs.target_env }}"
+          fi
+
+  # ─── repository_dispatch routing ─────────────────────────────────────────
+  on-dev-deploy:
+    name: Dev deploy → multistate
+    if: |
+      github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.environment == 'dev'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: multistate
+      shards: 4
+      workers: 2
+      target_env: dev
+      test_path: tests/test_analytics.py
+      bootstrap_states: true
+    secrets: inherit
+
+  on-main-deploy:
+    name: Main deploy → smoke + analytics + component + dataset
+    if: |
+      github.event_name == 'repository_dispatch' &&
+      contains(fromJSON('["prod","staging","main"]'), github.event.client_payload.environment)
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke or (analytics and not multistate) or component or dataset
+      shards: 3
+      workers: 2
+      target_env: prod
+    secrets: inherit
+
+  # ─── workflow_dispatch routing ───────────────────────────────────────────
+  manual-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'smoke'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: 1
+      workers: 4
+      target_env: ${{ inputs.target_env }}
+    secrets: inherit
+
+  manual-multistate:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'multistate'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: multistate
+      shards: 4
+      workers: 2
+      target_env: ${{ inputs.target_env }}
+      test_path: tests/test_analytics.py
+      bootstrap_states: true
+    secrets: inherit
+
+  manual-main-deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'main-deploy'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke or (analytics and not multistate) or component or dataset
+      shards: 3
+      workers: 2
+      target_env: ${{ inputs.target_env }}
+    secrets: inherit
+
+  manual-full:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'full'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: 3
+      workers: 2
+      target_env: ${{ inputs.target_env }}
+    secrets: inherit
