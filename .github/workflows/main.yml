@@ -1,0 +1,23 @@
+name: Main Full Suite
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+jobs:
+  full:
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: 3
+      workers: 2
+      target_env: staging
+    secrets: inherit

@@ -32,8 +32,9 @@ def pytest_configure(config):
     # Generate timestamped report filenames
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Override HTML report path
-    if config.option.htmlpath:
+    # Override HTML report path only if it's the default from pytest.ini addopts.
+    # CLI-provided --html paths (e.g. CI shard names) are preserved as-is.
+    if config.option.htmlpath == "reports/report.html":
         config.option.htmlpath = f"reports/test_report_{timestamp}.html"
 
     # Override JSON report path if enabled
