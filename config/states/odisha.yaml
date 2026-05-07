@@ -1,0 +1,141 @@
+state_name: Odisha
+state_key: odisha
+discovered_at: '2026-01-06T15:31:49.572050'
+sections:
+  hazard:
+    name: Hazard
+    indicators:
+    - name: Mean Elevation
+      key: mean_elevation
+      position: 1
+      enabled: true
+      section: Hazard
+    - name: Distance from the river
+      key: distance_from_the_river
+      position: 2
+      enabled: true
+      section: Hazard
+    - name: Average Distance from the Sea
+      key: average_distance_from_the_sea
+      position: 3
+      enabled: true
+      section: Hazard
+    - name: Mean Runoff
+      key: mean_runoff
+      position: 4
+      enabled: true
+      section: Hazard
+    - name: Total Runoff per month
+      key: total_runoff_per_month
+      position: 5
+      enabled: true
+      section: Hazard
+    - name: Highest Daily Runoff
+      key: highest_daily_runoff
+      position: 6
+      enabled: true
+      section: Hazard
+    - name: Total Monthly Rainfall
+      key: total_monthly_rainfall
+      position: 7
+      enabled: true
+      section: Hazard
+    - name: Mean slope
+      key: mean_slope
+      position: 8
+      enabled: true
+      section: Hazard
+    - name: Drainage density
+      key: drainage_density
+      position: 9
+      enabled: true
+      section: Hazard
+  exposure:
+    name: Exposure
+    indicators:
+    - name: Total Number of Households*
+      key: total_number_of_households
+      position: 1
+      enabled: true
+      section: Exposure
+    - name: Population*
+      key: population
+      position: 2
+      enabled: true
+      section: Exposure
+  vulnerability:
+    name: Vulnerability
+    indicators:
+    - name: Average availablity of domestic electricity
+      key: average_availablity_of_domestic_electricity
+      position: 1
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households with piped water connection
+      key: percentage_of_households_with_piped_water_connection
+      position: 2
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of households without sanitation facilities
+      key: percentage_of_households_without_sanitation_facilities
+      position: 3
+      enabled: true
+      section: Vulnerability
+    - name: Elderly population*
+      key: elderly_population
+      position: 4
+      enabled: true
+      section: Vulnerability
+    - name: Children population*
+      key: children_population
+      position: 5
+      enabled: true
+      section: Vulnerability
+    - name: Total Number of Human Deaths due to flood and cyclone
+      key: total_number_of_human_deaths_due_to_flood_and_cyclone
+      position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Estimated Population Affected by Floods and Cyclones
+      key: estimated_population_affected_by_floods_and_cyclones
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Cultivated Area Affected by Floods and Cyclones
+      key: cultivated_area_affected_by_floods_and_cyclones
+      position: 8
+      enabled: true
+      section: Vulnerability
+  government_response:
+    name: Government Response
+    indicators:
+    - name: Total Value of Flood Tenders
+      key: total_value_of_flood_tenders
+      position: 1
+      enabled: true
+      section: Government Response
+    - name: Total value of flood tenders granted under RIDF Scheme
+      key: total_value_of_flood_tenders_granted_under_ridf_scheme
+      position: 2
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Repairs and Restoration
+      key: total_value_of_flood_tenders_for_repairs_and_restoration
+      position: 3
+      enabled: true
+      section: Government Response
+    - name: Total Value of Flood Tenders for Immediate Measures
+      key: total_value_of_flood_tenders_for_immediate_measures
+      position: 4
+      enabled: true
+      section: Government Response
+    - name: Total value of flood tenders related to Others
+      key: total_value_of_flood_tenders_related_to_others
+      position: 5
+      enabled: true
+      section: Government Response
+    - name: Total value of funds allocated through SDRF during SEC meetings
+      key: total_value_of_funds_allocated_through_sdrf_during_sec_meetings
+      position: 6
+      enabled: true
+      section: Government Response
