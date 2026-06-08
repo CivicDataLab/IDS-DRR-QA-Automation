@@ -41,8 +41,7 @@ class DriverFactory:
             'profile.default_content_setting_values.notifications': 2,
             'profile.default_content_settings.popups': 0,
             'download.prompt_for_download': False,
-            # Disable images in headless/CI — charts are SVG/canvas so this is safe
-            'profile.managed_default_content_settings.images': 2 if Config.HEADLESS else 1,
+            'profile.managed_default_content_settings.images': 1,
         })
 
         # REMOVED: detach option (causes issues with parallel execution and cleanup)
