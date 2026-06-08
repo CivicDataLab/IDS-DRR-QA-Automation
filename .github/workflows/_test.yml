@@ -113,7 +113,7 @@ jobs:
 
           pytest "${{ inputs.test_path }}" \
             -n "${{ inputs.workers }}" \
-            --dist loadscope \
+            --dist loadgroup \
             --timeout=120 \
             --reruns 1 --reruns-delay 1 \
             --store-durations \

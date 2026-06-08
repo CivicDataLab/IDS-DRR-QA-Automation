@@ -10,15 +10,12 @@ from config.config import Config
 import logging
 
 # Suppress verbose logging from selenium and urllib3
-# Note: Root logging configuration is handled by pytest.ini to avoid conflicts
-# with pytest-xdist parallel workers in CI environments
 logging.getLogger('selenium').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
 def pytest_configure(config):
     """Configure pytest with custom settings"""
-    # Create required directories
     for directory in [
         Config.SCREENSHOTS_DIR,
         Config.ANALYTICS_SCREENSHOTS_DIR,
@@ -29,7 +26,6 @@ def pytest_configure(config):
     ]:
         os.makedirs(directory, exist_ok=True)
 
-    # Generate timestamped report filenames
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Override HTML report path only if it's the default from pytest.ini addopts.
@@ -37,25 +33,9 @@ def pytest_configure(config):
     if config.option.htmlpath == "reports/report.html":
         config.option.htmlpath = f"reports/test_report_{timestamp}.html"
 
-    # Override JSON report path if enabled
     if hasattr(config.option, 'json_report_file') and config.option.json_report_file:
         config.option.json_report_file = f"reports/test_report_{timestamp}.json"
 
-    # Note: Additional report plugins (self-healing, multistate) are disabled
-    # All test information is consolidated into the main HTML report via pytest-html
-    #
-    # If you need to re-enable these plugins, uncomment the lines below:
-    #
-    # from utils.pytest_self_healing_plugin import SelfHealingPlugin
-    # config.pluginmanager.register(SelfHealingPlugin(), "self_healing_plugin")
-    #
-    # from utils.pytest_multistate_plugin import MultiStateReportPlugin
-    # if not hasattr(config, '_multistate_plugin'):
-    #     multistate_plugin = MultiStateReportPlugin()
-    #     config._multistate_plugin = multistate_plugin
-    #     config.pluginmanager.register(multistate_plugin, "multistate_report_plugin")
-
-    # Add metadata to HTML report
     config._metadata = {
         "Project": "IDS-DRR QA Automation",
         "Framework": "Selenium + Pytest",
@@ -70,52 +50,98 @@ def pytest_configure(config):
     }
 
 
+def pytest_collection_modifyitems(items):
+    """Tag state-parametrized tests with xdist_group so all tests for the
+    same state go to the same worker, enabling Chrome session reuse per state."""
+    for item in items:
+        if hasattr(item, 'callspec') and 'state_key' in item.callspec.params:
+            state = item.callspec.params['state_key']
+            item.add_marker(pytest.mark.xdist_group(name=state))
+
+
+@pytest.fixture(scope="session")
+def _state_drivers():
+    """
+    Session-scoped Chrome pool keyed by state_key.
+    One Chrome instance per state, shared across all test classes for that state.
+    With --dist loadgroup, all tests for a state land on the same worker,
+    so this dict is the single source of truth for that state's driver.
+    """
+    drivers = {}
+    yield drivers
+    for d in drivers.values():
+        try:
+            d.delete_all_cookies()
+            d.execute_script("window.localStorage.clear();")
+            d.execute_script("window.sessionStorage.clear();")
+        except Exception:
+            pass
+        DriverFactory.quit_driver(d)
+
+
 @pytest.fixture(scope="function")
-def driver(request):
+def driver(request, _state_drivers):
     """
-    WebDriver fixture for each test with self-healing tracking
-
-    Args:
-        request: Pytest request object
-
-    Yields:
-        WebDriver: Configured WebDriver instance
+    WebDriver fixture.
+    - State-parametrized tests: one Chrome per state_key, reused across tests.
+      Between tests: cookies/storage cleared, navigates back to BASE_URL.
+    - Non-state tests: fresh Chrome per test (original behaviour).
     """
-    driver = DriverFactory.create_driver()
-    driver._healing_events = []
-    driver._test_name = request.node.nodeid
-    driver.get(Config.BASE_URL)
+    state_key = None
+    if hasattr(request.node, 'callspec') and 'state_key' in request.node.callspec.params:
+        state_key = request.node.callspec.params['state_key']
 
-    yield driver
+    if state_key:
+        if state_key not in _state_drivers:
+            d = DriverFactory.create_driver()
+            d.get(Config.BASE_URL)
+            _state_drivers[state_key] = d
 
-    # Note: Self-healing event collection is disabled
-    # Healing events are tracked on the driver but not reported separately
-    # All test results are in the main HTML report
+        d = _state_drivers[state_key]
 
-    # Clear browser state before quitting to prevent interference
-    try:
-        driver.delete_all_cookies()
-        driver.execute_script("window.localStorage.clear();")
-        driver.execute_script("window.sessionStorage.clear();")
-    except:
-        pass  # Ignore errors during cleanup
+        # Reset state before each test; recover if the browser crashed
+        try:
+            d.delete_all_cookies()
+            d.execute_script("window.localStorage.clear();")
+            d.execute_script("window.sessionStorage.clear();")
+            d.get(Config.BASE_URL)
+        except Exception:
+            DriverFactory.quit_driver(d)
+            d = DriverFactory.create_driver()
+            d.get(Config.BASE_URL)
+            _state_drivers[state_key] = d
 
-    DriverFactory.quit_driver(driver)
+        d._healing_events = []
+        d._test_name = request.node.nodeid
+        yield d
+        # Driver stays alive — torn down at session end by _state_drivers fixture
+
+    else:
+        # Non-state test: fresh Chrome, original behaviour
+        d = DriverFactory.create_driver()
+        d._healing_events = []
+        d._test_name = request.node.nodeid
+        d.get(Config.BASE_URL)
+        yield d
+        try:
+            d.delete_all_cookies()
+            d.execute_script("window.localStorage.clear();")
+            d.execute_script("window.sessionStorage.clear();")
+        except Exception:
+            pass
+        DriverFactory.quit_driver(d)
 
 
 @pytest.fixture(scope="session")
 def driver_session():
     """
-    WebDriver fixture shared across all tests in session
-    Use sparingly - prefer function-scoped driver for isolation
-
-    Yields:
-        WebDriver: Configured WebDriver instance
+    Shared driver across all tests in a session.
+    Discouraged — prefer the state-aware `driver` fixture above.
     """
-    driver = DriverFactory.create_driver()
-    driver.get(Config.BASE_URL)
-    yield driver
-    DriverFactory.quit_driver(driver)
+    d = DriverFactory.create_driver()
+    d.get(Config.BASE_URL)
+    yield d
+    DriverFactory.quit_driver(d)
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -138,13 +164,7 @@ def test_info(request):
 
 @pytest.fixture(scope="function")
 def screenshot_on_failure(driver, request):
-    """
-    Take screenshot if test fails
-
-    Usage:
-        def test_something(driver, screenshot_on_failure):
-            # Screenshot auto-taken on failure
-    """
+    """Take screenshot on test failure."""
     yield
 
     if hasattr(request.node, 'rep_call') and request.node.rep_call.failed:
@@ -165,18 +185,15 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
     setattr(item, f"rep_{rep.when}", rep)
 
-    # Add test description
     if hasattr(item, 'function'):
         rep.description = str(item.function.__doc__)
 
 
 def pytest_html_report_title(report):
-    """Customize HTML report title"""
     report.title = "IDS-DRR QA Automation Test Report"
 
 
 def pytest_addoption(parser):
-    """Add custom command line options"""
     parser.addoption(
         "--disable-healing",
         action="store_true",
@@ -192,20 +209,16 @@ def pytest_addoption(parser):
 
 
 def pytest_sessionstart(session):
-    """Set env vars based on CLI options before tests run"""
     if session.config.getoption("--no-learned-locators", False):
         os.environ["DISABLE_LEARNED_LOCATORS"] = "true"
 
 
 def pytest_html_results_table_header(cells):
-    """Customize HTML report table headers"""
     cells.insert(2, '<th>Description</th>')
     cells.insert(3, '<th>Duration</th>')
 
 
 def pytest_html_results_table_row(report, cells):
-    """Customize HTML report table rows"""
     cells.insert(2, f'<td>{getattr(report, "description", "")}</td>')
-    # Only show duration for test reports, not collection reports
     duration = getattr(report, 'duration', 0)
     cells.insert(3, f'<td>{duration:.2f}s</td>')
