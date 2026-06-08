@@ -28,6 +28,9 @@ on:
         type: boolean
         default: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     name: Tests (shard ${{ matrix.shard }})
@@ -97,10 +100,20 @@ jobs:
             MARKER_ARGS=(-m "${{ inputs.markers }}")
           fi
 
+          DURATION_FILE=".test_durations"
+          SPLIT_ALGO="duration_based_chunks"
+          if [ ! -f "$DURATION_FILE" ]; then
+            SPLIT_ALGO="count_based_chunks"
+          fi
+
           pytest "${{ inputs.test_path }}" \
             -n "${{ inputs.workers }}" \
             --dist loadscope \
+            --timeout=120 \
             --reruns 2 --reruns-delay 1 \
+            --store-durations \
+            --durations-path="$DURATION_FILE" \
+            --splitting-algorithm "$SPLIT_ALGO" \
             --html="reports/test_report_shard_${{ matrix.shard }}.html" \
             --self-contained-html \
             --junitxml="reports/junit_shard_${{ matrix.shard }}.xml" \
