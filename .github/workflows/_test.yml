@@ -8,13 +8,13 @@ on:
         type: string
         default: ""
       shards:
-        description: Number of parallel shards (matrix size). 1 disables pytest-split.
-        type: number
-        default: 1
+        description: JSON array of shard indices, e.g. "[1,2,3,4]". Single shard disables pytest-split.
+        type: string
+        default: "[1]"
       workers:
         description: pytest-xdist workers per shard.
         type: number
-        default: 2
+        default: 4
       target_env:
         description: Target environment (dev, staging, prod). Picks URL.
         type: string
@@ -29,28 +29,13 @@ on:
         default: false
 
 jobs:
-  prepare:
-    name: Prepare matrix
-    runs-on: ubuntu-latest
-    outputs:
-      shards: ${{ steps.gen.outputs.shards }}
-    steps:
-      - id: gen
-        shell: bash
-        run: |
-          N=${{ inputs.shards }}
-          ARR=$(seq -s, 1 $N)
-          echo "shards=[$ARR]" >> "$GITHUB_OUTPUT"
-          echo "Matrix shards: [$ARR]"
-
   test:
-    name: Tests (shard ${{ matrix.shard }}/${{ inputs.shards }})
-    needs: prepare
+    name: Tests (shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+        shard: ${{ fromJSON(inputs.shards) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -95,16 +80,16 @@ jobs:
           set -euo pipefail
 
           case "$TARGET_ENV" in
-            prod)        export TEST_URL="${URL}" ;;
-            staging)     export TEST_URL="${STAGING_URL:-$URL}" ;;
-            dev|*)       export TEST_URL="${DEV_URL:-$URL}" ;;
+            prod)    export TEST_URL="${URL}" ;;
+            staging) export TEST_URL="${STAGING_URL:-$URL}" ;;
+            dev|*)   export TEST_URL="${DEV_URL:-$URL}" ;;
           esac
           echo "Target: $TARGET_ENV → $TEST_URL"
 
-          SHARDS="${{ inputs.shards }}"
+          TOTAL_SHARDS=$(echo '${{ inputs.shards }}' | jq 'length')
           SPLIT_ARGS=()
-          if [ "$SHARDS" -gt 1 ]; then
-            SPLIT_ARGS=(--splits "$SHARDS" --group "${{ matrix.shard }}")
+          if [ "$TOTAL_SHARDS" -gt 1 ]; then
+            SPLIT_ARGS=(--splits "$TOTAL_SHARDS" --group "${{ matrix.shard }}")
           fi
 
           MARKER_ARGS=()
@@ -158,9 +143,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "requirements.txt"
+
       - name: Install merge dependencies
         shell: bash
-        run: pip install pytest-html pytest-metadata
+        run: uv pip install pytest-html pytest-metadata --system
 
       - name: Download shard reports
         uses: actions/download-artifact@v4
@@ -196,10 +187,10 @@ jobs:
           script: |
             const result = '${{ needs.test.result }}';
             const markers = '${{ inputs.markers }}' || 'all';
-            const shards = '${{ inputs.shards }}';
+            const shards = JSON.parse('${{ inputs.shards }}').length;
             const workers = '${{ inputs.workers }}';
             const env = '${{ inputs.target_env }}';
-            const status = result === 'success' ? 'passed' : 'failed';
+            const status = result === 'success' ? '✅ passed' : '❌ failed';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -208,7 +199,7 @@ jobs:
                 `## QA Tests ${status}`,
                 ``,
                 `- **Markers**: \`${markers}\``,
-                `- **Sharding**: ${shards} × ${workers} workers`,
+                `- **Sharding**: ${shards} shards × ${workers} workers`,
                 `- **Target env**: ${env}`,
                 ``,
                 `Download the **consolidated-test-report** artifact for the merged \`report.html\`.`,

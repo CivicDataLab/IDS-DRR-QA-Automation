@@ -1,4 +1,4 @@
-name: Nightly Multistate
+name: Nightly — Full Regression
 
 on:
   schedule:
@@ -16,13 +16,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  multistate:
+  regression:
     uses: ./.github/workflows/_test.yml
     with:
-      markers: multistate
-      shards: 4
-      workers: 2
+      markers: ""
+      shards: "[1,2,3,4]"
+      workers: 4
       target_env: ${{ inputs.target_env || 'dev' }}
-      test_path: tests/test_analytics.py
       bootstrap_states: true
     secrets: inherit
