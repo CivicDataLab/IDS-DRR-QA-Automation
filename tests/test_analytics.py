@@ -33,6 +33,7 @@ from pages.common_page import CommonPage
 from pages.analytics_page import AnalyticsPage
 from utils.state_config_loader import get_config_loader
 from config.test_data import AnalyticsTestData
+from config.config import Config
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -1246,6 +1247,10 @@ class TestAllStatesIndicatorSmoke:
             print(f"\n[{state_name}]")
 
             try:
+                # Hard reload to home before each state — clears prior state's DOM so
+                # navigate_to_analytics() always runs on a fresh page (not a SPA soft-nav).
+                driver.get(Config.BASE_URL)
+
                 # 1. Navigate to analytics
                 assert common_page.navigate_to_analytics(), "Navigation failed"
                 checks.append("navigation")
