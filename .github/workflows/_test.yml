@@ -28,6 +28,9 @@ on:
         type: boolean
         default: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     name: Tests (shard ${{ matrix.shard }})
@@ -86,10 +89,20 @@ jobs:
           esac
           echo "Target: $TARGET_ENV → $TEST_URL"
 
+          DURATION_FILE=".test_durations"
           TOTAL_SHARDS=$(echo '${{ inputs.shards }}' | jq 'length')
+
           SPLIT_ARGS=()
           if [ "$TOTAL_SHARDS" -gt 1 ]; then
-            SPLIT_ARGS=(--splits "$TOTAL_SHARDS" --group "${{ matrix.shard }}")
+            SPLIT_ALGO="duration_based_chunks"
+            if [ ! -f "$DURATION_FILE" ]; then
+              SPLIT_ALGO="least_duration"
+            fi
+            SPLIT_ARGS=(
+              --splits "$TOTAL_SHARDS"
+              --group "${{ matrix.shard }}"
+              --splitting-algorithm "$SPLIT_ALGO"
+            )
           fi
 
           MARKER_ARGS=()
@@ -100,7 +113,10 @@ jobs:
           pytest "${{ inputs.test_path }}" \
             -n "${{ inputs.workers }}" \
             --dist loadscope \
+            --timeout=120 \
             --reruns 2 --reruns-delay 1 \
+            --store-durations \
+            --durations-path="$DURATION_FILE" \
             --html="reports/test_report_shard_${{ matrix.shard }}.html" \
             --self-contained-html \
             --junitxml="reports/junit_shard_${{ matrix.shard }}.xml" \
