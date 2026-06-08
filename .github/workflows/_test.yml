@@ -78,6 +78,7 @@ jobs:
           DEFAULT_TIMEOUT: "10"
           SHORT_TIMEOUT: "5"
           LONG_TIMEOUT: "15"
+          IMPLICIT_WAIT: "0"
         shell: bash
         run: |
           set -euo pipefail
@@ -112,9 +113,9 @@ jobs:
 
           pytest "${{ inputs.test_path }}" \
             -n "${{ inputs.workers }}" \
-            --dist loadscope \
+            --dist loadgroup \
             --timeout=120 \
-            --reruns 2 --reruns-delay 1 \
+            --reruns 1 --reruns-delay 1 \
             --store-durations \
             --durations-path="$DURATION_FILE" \
             --html="reports/test_report_shard_${{ matrix.shard }}.html" \
