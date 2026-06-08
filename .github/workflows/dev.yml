@@ -1,24 +1,23 @@
-name: Push to Main — Full Regression
+name: Push to Dev — Smoke
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
     paths-ignore:
       - "**/*.md"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
 
 concurrency:
-  group: main
-  cancel-in-progress: false
+  group: dev-push
+  cancel-in-progress: true
 
 jobs:
-  regression:
+  smoke:
     uses: ./.github/workflows/_test.yml
     with:
-      markers: ""
-      shards: "[1,2,3,4]"
+      markers: smoke
+      shards: "[1]"
       workers: 4
-      target_env: prod
-      bootstrap_states: true
+      target_env: dev
     secrets: inherit
