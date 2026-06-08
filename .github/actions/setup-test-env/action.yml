@@ -1,5 +1,5 @@
 name: Setup Test Environment
-description: Install Python + deps, restore driver cache, and prepare report directories. Caller must run actions/checkout first — local composite actions cannot self-checkout.
+description: Install Python + deps via uv, restore driver and locator caches, and prepare report directories. Caller must run actions/checkout first — local composite actions cannot self-checkout.
 
 inputs:
   python-version:
@@ -14,7 +14,11 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
-        cache: pip
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
 
     - name: Cache browser drivers
       uses: actions/cache@v4
@@ -25,11 +29,16 @@ runs:
         key: ${{ runner.os }}-drivers-${{ hashFiles('requirements.txt') }}
         restore-keys: ${{ runner.os }}-drivers-
 
+    - name: Cache learned locators
+      uses: actions/cache@v4
+      with:
+        path: config/learned_locators.json
+        key: ${{ runner.os }}-learned-locators
+        restore-keys: ${{ runner.os }}-learned-locators
+
     - name: Install dependencies
       shell: bash
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      run: uv pip install -r requirements.txt --system
 
     - name: Prepare report directories
       shell: bash
