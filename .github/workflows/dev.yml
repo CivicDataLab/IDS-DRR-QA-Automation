@@ -2,21 +2,32 @@ name: Push to Dev — Smoke
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, chore/ci-speed-improvements]
     paths-ignore:
       - "**/*.md"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
 
 concurrency:
-  group: dev-push
+  group: dev-push-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   smoke:
+    if: github.ref_name == 'dev'
     uses: ./.github/workflows/_test.yml
     with:
       markers: smoke
+      shards: "[1]"
+      workers: 4
+      target_env: dev
+    secrets: inherit
+
+  multistate:
+    if: github.ref_name == 'chore/ci-speed-improvements'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: multistate
       shards: "[1]"
       workers: 4
       target_env: dev
