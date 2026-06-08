@@ -19,6 +19,7 @@ runs:
       uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
+        cache-dependency-glob: "requirements.txt"
 
     - name: Cache browser drivers
       uses: actions/cache@v4
