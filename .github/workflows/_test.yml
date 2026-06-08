@@ -89,21 +89,25 @@ jobs:
           esac
           echo "Target: $TARGET_ENV → $TEST_URL"
 
+          DURATION_FILE=".test_durations"
           TOTAL_SHARDS=$(echo '${{ inputs.shards }}' | jq 'length')
+
           SPLIT_ARGS=()
           if [ "$TOTAL_SHARDS" -gt 1 ]; then
-            SPLIT_ARGS=(--splits "$TOTAL_SHARDS" --group "${{ matrix.shard }}")
+            SPLIT_ALGO="duration_based_chunks"
+            if [ ! -f "$DURATION_FILE" ]; then
+              SPLIT_ALGO="least_duration"
+            fi
+            SPLIT_ARGS=(
+              --splits "$TOTAL_SHARDS"
+              --group "${{ matrix.shard }}"
+              --splitting-algorithm "$SPLIT_ALGO"
+            )
           fi
 
           MARKER_ARGS=()
           if [ -n "${{ inputs.markers }}" ]; then
             MARKER_ARGS=(-m "${{ inputs.markers }}")
-          fi
-
-          DURATION_FILE=".test_durations"
-          SPLIT_ALGO="duration_based_chunks"
-          if [ ! -f "$DURATION_FILE" ]; then
-            SPLIT_ALGO="count_based_chunks"
           fi
 
           pytest "${{ inputs.test_path }}" \
@@ -113,7 +117,6 @@ jobs:
             --reruns 2 --reruns-delay 1 \
             --store-durations \
             --durations-path="$DURATION_FILE" \
-            --splitting-algorithm "$SPLIT_ALGO" \
             --html="reports/test_report_shard_${{ matrix.shard }}.html" \
             --self-contained-html \
             --junitxml="reports/junit_shard_${{ matrix.shard }}.xml" \
