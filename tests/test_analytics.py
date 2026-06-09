@@ -981,131 +981,78 @@ class TestSectionCoverageByState:
 @pytest.mark.flow
 @pytest.mark.slow
 class TestMultiStateCompleteFlow:
-    """Complete end-to-end analytics flow test for all states"""
+    """End-to-end analytics flow, decomposed per (state, view, section) so each
+    combination is an independent, parallelizable test instead of one monolithic
+    multi-hour run. Together they cover the same surface as the old single test:
+    navigation, state select, every view, every section, every indicator."""
+
+    SECTION_PREFIX = {1: "map_", 2: "chart_", 3: "table_"}
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_complete_analytics_workflow_for_state(self, driver, state_key):
-        """
-        Full analytics workflow with all views, sections, and indicators for each state
-
-        This comprehensive test:
-        1. Tests navigation to analytics
-        2. Selects the state
-        3. Tests all three views (Map, Chart, Table)
-        4. For each view, tests all sections (Hazard, Exposure, Vulnerability, Govt Response)
-        5. For each section, expands it, tests all indicators, and collapses it
-        6. Takes screenshots at key points
-        """
+    @pytest.mark.parametrize("view_index,view_name", [
+        (1, "Map"), (2, "Chart"), (3, "Table"),
+    ])
+    @pytest.mark.parametrize(
+        "section", ["hazard", "exposure", "vulnerability", "government_response"]
+    )
+    def test_workflow_view_section(self, driver, state_key, view_index, view_name, section):
+        """Workflow slice: select state -> view -> district/revenue circle ->
+        expand one section, exercise all its indicators, collapse."""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
         state_config = config_loader.get_state_config(state_key)
         state_name = state_config.get("state_name")
 
-        print(f"\n{'='*80}")
-        print(f"COMPLETE WORKFLOW TEST FOR {state_name.upper()}")
-        print(f"{'='*80}\n")
+        indicators = config_loader.get_state_indicators(state_key, section)
+        if not indicators:
+            pytest.skip(f"No indicators for {section} in {state_name}")
 
         # Navigate and select state
         assert common_page.navigate_to_analytics(), f"Failed to navigate to analytics for {state_name}"
         assert analytics_page.select_state(state_name), f"Failed to select state: {state_name}"
 
+        # Select view + drill-down filters (all views require both)
+        assert analytics_page.select_view(view_index), \
+            f"Failed to select {view_name} view for {state_name}"
+
         district = AnalyticsTestData.get_district_for_state(state_key)
         revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
+        assert analytics_page.select_district(district), \
+            f"Failed to select district for {view_name} view in {state_name}"
+        assert analytics_page.select_revenue_circle(revenue_circle), \
+            f"Failed to select revenue circle for {view_name} view in {state_name}"
 
-        # Test all views
-        view_data = [
-            {'view_index': 1, 'view_name': 'Map', 'prefix': 'map_'},
-            {'view_index': 2, 'view_name': 'Chart', 'prefix': 'chart_'},
-            {'view_index': 3, 'view_name': 'Table', 'prefix': 'table_'}
-        ]
+        prefix = self.SECTION_PREFIX[view_index]
+        analytics_page.take_analytics_screenshot(f"{state_key}_{prefix}", "initial")
 
-        for view in view_data:
-            print(f"\n=== Testing {view['view_name']} View for {state_name} ===")
+        section_methods = {
+            "hazard": (analytics_page.expand_hazard_options, analytics_page.collapse_hazard_options),
+            "exposure": (analytics_page.expand_exposure_options, analytics_page.collapse_exposure_options),
+            "vulnerability": (analytics_page.expand_vulnerability_options, analytics_page.collapse_vulnerability_options),
+            "government_response": (analytics_page.expand_govt_response_options, analytics_page.collapse_govt_response_options),
+        }
+        expand, collapse = section_methods[section]
 
-            # Select view
-            assert analytics_page.select_view(view['view_index']), \
-                f"Failed to select {view['view_name']} view for {state_name}"
+        print(f"\n--- {state_name} / {view_name} / {section.title()} ({len(indicators)} indicators) ---")
 
-            # All views require district and revenue circle selection.
-            # select_district() waits internally for the dropdown to be populated.
-            assert analytics_page.select_district(district), \
-                f"Failed to select district for {view['view_name']} view in {state_name}"
-            assert analytics_page.select_revenue_circle(revenue_circle), \
-                f"Failed to select revenue circle for {view['view_name']} view in {state_name}"
+        assert expand(), f"Failed to expand {section} for {state_name}"
+        analytics_page.take_analytics_screenshot(f"{state_key}_{prefix}{section}_", "expanded")
 
-            analytics_page.take_analytics_screenshot(
-                f"{state_key}_{view['prefix']}",
-                "initial"
-            )
+        # Indicator selection failures are logged but non-fatal (preserves the
+        # original monolithic test's behaviour).
+        for indicator in indicators:
+            if not indicator.get("enabled", True):
+                continue
+            indicator_name = indicator.get("name")
+            try:
+                assert analytics_page.select_indicator_by_text(indicator_name, section), \
+                    f"Failed to select {indicator_name}"
+                print(f"    ✅ {indicator_name}")
+            except Exception as e:
+                print(f"    ❌ {indicator_name}: {e}")
 
-            # Test all sections
-            sections = ["hazard", "exposure", "vulnerability", "government_response"]
-
-            for section in sections:
-                # Get section-specific data
-                indicators = config_loader.get_state_indicators(state_key, section)
-
-                if not indicators:
-                    print(f"⚠️  No indicators found for {section} in {state_name}, skipping...")
-                    continue
-
-                print(f"\n  --- Testing {section.title()} Section ({len(indicators)} indicators) ---")
-
-                # Section method mapping
-                section_methods = {
-                    "hazard": {
-                        "expand": analytics_page.expand_hazard_options,
-                        "collapse": analytics_page.collapse_hazard_options
-                    },
-                    "exposure": {
-                        "expand": analytics_page.expand_exposure_options,
-                        "collapse": analytics_page.collapse_exposure_options
-                    },
-                    "vulnerability": {
-                        "expand": analytics_page.expand_vulnerability_options,
-                        "collapse": analytics_page.collapse_vulnerability_options
-                    },
-                    "government_response": {
-                        "expand": analytics_page.expand_govt_response_options,
-                        "collapse": analytics_page.collapse_govt_response_options
-                    }
-                }
-
-                handler = section_methods.get(section)
-
-                # Expand section
-                assert handler["expand"](), f"Failed to expand {section} for {state_name}"
-
-                analytics_page.take_analytics_screenshot(
-                    f"{state_key}_{view['prefix']}{section}_",
-                    "expanded"
-                )
-
-                # Test each indicator
-                for indicator in indicators:
-                    if not indicator.get("enabled", True):
-                        continue
-
-                    indicator_name = indicator.get("name")
-
-                    try:
-                        assert analytics_page.select_indicator_by_text(indicator_name, section), \
-                            f"Failed to select {indicator_name}"
-
-                        print(f"    ✅ {indicator_name}")
-
-                    except Exception as e:
-                        print(f"    ❌ {indicator_name}: {e}")
-
-                # Collapse section
-                assert handler["collapse"](), f"Failed to collapse {section} for {state_name}"
-
-            print(f"\n✅ {view['view_name']} view completed for {state_name}")
-
-        print(f"\n{'='*80}")
-        print(f"COMPLETE WORKFLOW TEST FINISHED FOR {state_name.upper()}")
-        print(f"{'='*80}\n")
+        assert collapse(), f"Failed to collapse {section} for {state_name}"
 
 
 @pytest.mark.analytics
