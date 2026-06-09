@@ -37,13 +37,6 @@ runs:
         key: ${{ runner.os }}-learned-locators
         restore-keys: ${{ runner.os }}-learned-locators
 
-    - name: Cache test durations
-      uses: actions/cache@v4
-      with:
-        path: .test_durations
-        key: ${{ runner.os }}-test-durations
-        restore-keys: ${{ runner.os }}-test-durations
-
     - name: Install dependencies
       shell: bash
       run: uv pip install -r requirements.txt --system

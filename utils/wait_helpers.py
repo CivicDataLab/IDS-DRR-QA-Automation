@@ -46,6 +46,46 @@ def wait_for_dropdown_options(driver, locator, timeout=15, min_options=1):
         return False
 
 
+def wait_for_dropdown_option_text(driver, locator, text, timeout=20):
+    """
+    Wait until the dropdown contains an option matching `text` (exact, or
+    case-insensitive partial — mirroring select_dropdown_by_text).
+
+    Guards against a stale dropdown: when the browser is reused across states
+    (--dist load), selecting a new state triggers an async reload of dependent
+    dropdowns. Until that completes, the dropdown still holds the PREVIOUS
+    state's options. Waiting for the specific target option ensures the new
+    state's data has loaded before we attempt selection.
+
+    Args:
+        driver: WebDriver instance
+        locator: Tuple of (By, selector)
+        text: Visible option text to wait for
+        timeout: Maximum wait time in seconds (default: 20)
+
+    Returns:
+        bool: True if the option appeared, False if timeout
+    """
+    target = text.strip().lower()
+
+    def option_present(driver):
+        try:
+            select = Select(driver.find_element(*locator))
+            for opt in select.options:
+                opt_text = opt.text.strip().lower()
+                if opt_text == target or target in opt_text:
+                    return True
+            return False
+        except Exception:
+            return False
+
+    try:
+        WebDriverWait(driver, timeout).until(option_present)
+        return True
+    except TimeoutException:
+        return False
+
+
 def wait_for_element_clickable(driver, locator, timeout=10):
     """
     Wait for element to be clickable (visible and enabled).
