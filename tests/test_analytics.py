@@ -33,7 +33,6 @@ from pages.common_page import CommonPage
 from pages.analytics_page import AnalyticsPage
 from utils.state_config_loader import get_config_loader
 from config.test_data import AnalyticsTestData
-from config.config import Config
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -1115,20 +1114,18 @@ class TestMultiStateCompleteFlow:
 class TestCrossStateComparison:
     """Cross-state comparison and validation tests"""
 
-    def test_all_states_have_common_sections(self, driver):
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_all_states_have_common_sections(self, driver, state_key):
         """Verify all states have the four main sections"""
         required_sections = ["hazard", "exposure", "vulnerability", "government_response"]
 
-        for state_key in config_loader.get_all_states():
-            state_config = config_loader.get_state_config(state_key)
-            state_name = state_config.get("state_name")
-            sections = state_config.get("sections", {})
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
+        sections = state_config.get("sections", {})
 
-            for required_section in required_sections:
-                assert required_section in sections, \
-                    f"❌ {state_name} missing required section: {required_section}"
-
-            print(f"✅ {state_name} has all required sections")
+        for required_section in required_sections:
+            assert required_section in sections, \
+                f"{state_name} missing required section: {required_section}"
 
     def test_indicator_consistency_report(self, driver):
         """Generate a report of indicator availability across states"""
@@ -1210,102 +1207,36 @@ class TestMultiStateEdgeCases:
 @pytest.mark.multistate
 class TestAllStatesIndicatorSmoke:
     """
-    Smoke Test - Single flow testing one indicator from each state with expanded options validation
+    Smoke Test - One indicator per state with expanded options validation.
+    Parametrized so each state runs as an independent test (parallel-friendly).
 
     Run: pytest tests/test_analytics.py -v -m smoke -k "TestAllStatesIndicatorSmoke"
     """
 
-    def test_all_states_with_expanded_options(self, driver):
-        """
-        Smoke test: For each state, test one indicator with key expanded options
-
-        For each state validates:
-        1. State selection works
-        2. View selection (Map view) works
-        3. District dropdown selection works
-        4. Revenue circle dropdown selection works
-        5. Section expand works (hazard)
-        6. Indicator selection works
-        """
+    @pytest.mark.parametrize("state_key", config_loader.get_all_states())
+    def test_all_states_with_expanded_options(self, driver, state_key):
+        """Smoke: navigation, Map view, district, revenue circle, hazard indicator"""
         common_page = CommonPage(driver)
         analytics_page = AnalyticsPage(driver)
 
-        all_states = config_loader.get_all_states()
+        state_config = config_loader.get_state_config(state_key)
+        state_name = state_config.get("state_name")
 
-        print(f"\n{'='*70}")
-        print(f"SMOKE TEST - All States with Expanded Options")
-        print(f"Testing {len(all_states)} states: navigation, dropdowns, indicator")
-        print(f"{'='*70}\n")
+        assert common_page.navigate_to_analytics(), "Navigation failed"
+        assert analytics_page.select_state(state_name), "State selection failed"
+        assert analytics_page.select_view(1), "View selection failed"
 
-        results = {'passed': [], 'failed': []}
+        district = AnalyticsTestData.get_district_for_state(state_key)
+        assert analytics_page.select_district(district), "District selection failed"
 
-        for state_key in all_states:
-            state_config = config_loader.get_state_config(state_key)
-            state_name = state_config.get("state_name")
-            checks = []
+        revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
+        assert analytics_page.select_revenue_circle(revenue_circle), "Revenue circle failed"
 
-            print(f"\n[{state_name}]")
+        hazard_data = state_config.get("sections", {}).get("hazard", {})
+        indicators = [i for i in hazard_data.get("indicators", []) if i.get("enabled", True)]
 
-            try:
-                # Hard reload to home before each state — clears prior state's DOM so
-                # navigate_to_analytics() always runs on a fresh page (not a SPA soft-nav).
-                driver.get(Config.BASE_URL)
-
-                # 1. Navigate to analytics
-                assert common_page.navigate_to_analytics(), "Navigation failed"
-                checks.append("navigation")
-
-                # 2. Select state
-                assert analytics_page.select_state(state_name), "State selection failed"
-                checks.append("state_select")
-
-                # 3. Select Map view
-                assert analytics_page.select_view(1), "View selection failed"
-                checks.append("view_select")
-
-                # 4. Select district — select_district() waits internally for dropdown to populate
-                district = AnalyticsTestData.get_district_for_state(state_key)
-                assert analytics_page.select_district(district), f"District selection failed"
-                checks.append("district_select")
-
-                # 5. Select revenue circle
-                revenue_circle = AnalyticsTestData.get_revenue_circle_for_state(state_key)
-                assert analytics_page.select_revenue_circle(revenue_circle), "Revenue circle failed"
-                checks.append("revenue_circle")
-
-                # 6. Expand hazard section and select first indicator
-                hazard_data = state_config.get("sections", {}).get("hazard", {})
-                indicators = [i for i in hazard_data.get("indicators", []) if i.get("enabled", True)]
-
-                if indicators:
-                    indicator_name = indicators[0].get("name")
-                    assert analytics_page.expand_hazard_options(), "Section expand failed"
-                    checks.append("section_expand")
-
-                    assert analytics_page.select_indicator_by_text(indicator_name, "hazard"), "Indicator failed"
-                    checks.append("indicator_select")
-
-                    analytics_page.collapse_hazard_options()
-
-                print(f"  PASSED: {', '.join(checks)}")
-                results['passed'].append(state_name)
-
-            except AssertionError as e:
-                print(f"  FAILED at: {str(e)[:50]}")
-                print(f"  Passed checks: {', '.join(checks)}")
-                results['failed'].append({'state': state_name, 'error': str(e), 'passed': checks})
-
-            except Exception as e:
-                print(f"  ERROR: {str(e)[:50]}")
-                results['failed'].append({'state': state_name, 'error': str(e), 'passed': checks})
-
-        # Summary
-        print(f"\n{'='*70}")
-        print(f"RESULTS: {len(results['passed'])}/{len(all_states)} states passed")
-        if results['failed']:
-            print(f"\nFailed States:")
-            for f in results['failed']:
-                print(f"  - {f['state']}: {f['error'][:60]}")
-        print(f"{'='*70}\n")
-
-        assert len(results['failed']) == 0, f"Failed: {[f['state'] for f in results['failed']]}"
+        if indicators:
+            indicator_name = indicators[0].get("name")
+            assert analytics_page.expand_hazard_options(), "Section expand failed"
+            assert analytics_page.select_indicator_by_text(indicator_name, "hazard"), "Indicator selection failed"
+            analytics_page.collapse_hazard_options()
