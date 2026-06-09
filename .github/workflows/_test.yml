@@ -78,7 +78,7 @@ jobs:
           DEFAULT_TIMEOUT: "10"
           SHORT_TIMEOUT: "5"
           LONG_TIMEOUT: "15"
-          IMPLICIT_WAIT: "0"
+          IMPLICIT_WAIT: "1"
         shell: bash
         run: |
           set -euo pipefail
@@ -93,6 +93,9 @@ jobs:
           DURATION_FILE=".test_durations"
           TOTAL_SHARDS=$(echo '${{ inputs.shards }}' | jq 'length')
 
+          # Durations are committed to the repo (seeded from a full run, refreshed
+          # periodically). duration_based_chunks gives a balanced split; fall back
+          # to least_duration only if the file is somehow missing.
           SPLIT_ARGS=()
           if [ "$TOTAL_SHARDS" -gt 1 ]; then
             SPLIT_ALGO="duration_based_chunks"
@@ -111,12 +114,14 @@ jobs:
             MARKER_ARGS=(-m "${{ inputs.markers }}")
           fi
 
+          # --dist load (not loadgroup): let tests scatter freely across workers so a
+          # heavy state isn't pinned to one worker. State Chrome reuse still works per
+          # worker via the conftest _state_drivers pool.
           pytest "${{ inputs.test_path }}" \
             -n "${{ inputs.workers }}" \
-            --dist loadgroup \
+            --dist load \
             --timeout=120 \
-            --reruns 1 --reruns-delay 1 \
-            --store-durations \
+            --reruns 2 --reruns-delay 1 \
             --durations-path="$DURATION_FILE" \
             --html="reports/test_report_shard_${{ matrix.shard }}.html" \
             --self-contained-html \
