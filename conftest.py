@@ -50,22 +50,13 @@ def pytest_configure(config):
     }
 
 
-def pytest_collection_modifyitems(items):
-    """Tag state-parametrized tests with xdist_group so all tests for the
-    same state go to the same worker, enabling Chrome session reuse per state."""
-    for item in items:
-        if hasattr(item, 'callspec') and 'state_key' in item.callspec.params:
-            state = item.callspec.params['state_key']
-            item.add_marker(pytest.mark.xdist_group(name=state))
-
-
 @pytest.fixture(scope="session")
 def _state_drivers():
     """
-    Session-scoped Chrome pool keyed by state_key.
-    One Chrome instance per state, shared across all test classes for that state.
-    With --dist loadgroup, all tests for a state land on the same worker,
-    so this dict is the single source of truth for that state's driver.
+    Per-worker Chrome pool keyed by state_key. One Chrome instance per state
+    on each xdist worker, reused across all tests for that state on that worker.
+    With --dist load, a state's tests may land on multiple workers, so each
+    worker lazily builds its own entry — bounded by (workers x states).
     """
     drivers = {}
     yield drivers
