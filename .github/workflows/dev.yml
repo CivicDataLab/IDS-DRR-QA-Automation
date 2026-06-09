@@ -27,8 +27,8 @@ jobs:
     if: github.ref_name == 'chore/ci-speed-improvements'
     uses: ./.github/workflows/_test.yml
     with:
-      markers: multistate
-      shards: "[1]"
+      markers: "multistate and not slow"
+      shards: "[1,2,3,4]"
       workers: 4
       target_env: dev
     secrets: inherit

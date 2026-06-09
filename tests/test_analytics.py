@@ -1115,7 +1115,7 @@ class TestCrossStateComparison:
     """Cross-state comparison and validation tests"""
 
     @pytest.mark.parametrize("state_key", config_loader.get_all_states())
-    def test_all_states_have_common_sections(self, driver, state_key):
+    def test_all_states_have_common_sections(self, state_key):
         """Verify all states have the four main sections"""
         required_sections = ["hazard", "exposure", "vulnerability", "government_response"]
 
@@ -1127,7 +1127,7 @@ class TestCrossStateComparison:
             assert required_section in sections, \
                 f"{state_name} missing required section: {required_section}"
 
-    def test_indicator_consistency_report(self, driver):
+    def test_indicator_consistency_report(self):
         """Generate a report of indicator availability across states"""
         print("\n" + "="*80)
         print("MULTI-STATE INDICATOR COVERAGE REPORT")
