@@ -1,0 +1,229 @@
+name: _test
+
+on:
+  workflow_call:
+    inputs:
+      markers:
+        description: Pytest -m expression. Empty = run everything.
+        type: string
+        default: ""
+      shards:
+        description: JSON array of shard indices, e.g. "[1,2,3,4]". Single shard disables pytest-split.
+        type: string
+        default: "[1]"
+      workers:
+        description: pytest-xdist workers per shard.
+        type: number
+        default: 4
+      target_env:
+        description: Target environment (dev, staging, prod). Picks URL.
+        type: string
+        default: dev
+      test_path:
+        description: Path passed to pytest (e.g. tests/ or tests/test_analytics.py).
+        type: string
+        default: tests/
+      bootstrap_states:
+        description: Run scripts/discover_state_indicators.py if states_master.yaml is missing.
+        type: boolean
+        default: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    name: Tests (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(inputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-test-env
+
+      - name: Bootstrap state configs if missing
+        if: inputs.bootstrap_states
+        env:
+          URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+          HEADLESS: "true"
+          DEFAULT_TIMEOUT: "10"
+        shell: bash
+        run: |
+          if [ -f config/states/states_master.yaml ]; then
+            echo "states_master.yaml present — skipping discovery."
+          else
+            echo "states_master.yaml missing — running discovery."
+            python scripts/discover_state_indicators.py || echo "Discovery failed; tests will use fallback."
+          fi
+
+      - name: Run pytest
+        env:
+          TARGET_ENV: ${{ inputs.target_env }}
+          URL: ${{ secrets.URL }}
+          DEV_URL: ${{ secrets.DEV_URL }}
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          HOME_URL_4: ${{ secrets.HOME_URL_4 }}
+          MEDIUM_URL: ${{ secrets.MEDIUM_URL }}
+          HOME_URL_USERNAME: ${{ secrets.HOME_URL_USERNAME }}
+          HOME_URL_PASSWORD: ${{ secrets.HOME_URL_PASSWORD }}
+          HEADLESS: "true"
+          BROWSER: chrome
+          LOCAL: "true"
+          DEFAULT_TIMEOUT: "10"
+          SHORT_TIMEOUT: "5"
+          LONG_TIMEOUT: "15"
+          IMPLICIT_WAIT: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$TARGET_ENV" in
+            prod)    export TEST_URL="${URL}" ;;
+            staging) export TEST_URL="${STAGING_URL:-$URL}" ;;
+            dev|*)   export TEST_URL="${DEV_URL:-$URL}" ;;
+          esac
+          echo "Target: $TARGET_ENV → $TEST_URL"
+
+          DURATION_FILE=".test_durations"
+          TOTAL_SHARDS=$(echo '${{ inputs.shards }}' | jq 'length')
+
+          # Durations are committed to the repo (seeded from a full run, refreshed
+          # periodically). duration_based_chunks gives a balanced split; fall back
+          # to least_duration only if the file is somehow missing.
+          SPLIT_ARGS=()
+          if [ "$TOTAL_SHARDS" -gt 1 ]; then
+            SPLIT_ALGO="duration_based_chunks"
+            if [ ! -f "$DURATION_FILE" ]; then
+              SPLIT_ALGO="least_duration"
+            fi
+            SPLIT_ARGS=(
+              --splits "$TOTAL_SHARDS"
+              --group "${{ matrix.shard }}"
+              --splitting-algorithm "$SPLIT_ALGO"
+            )
+          fi
+
+          MARKER_ARGS=()
+          if [ -n "${{ inputs.markers }}" ]; then
+            MARKER_ARGS=(-m "${{ inputs.markers }}")
+          fi
+
+          # --dist load (not loadgroup): let tests scatter freely across workers so a
+          # heavy state isn't pinned to one worker. State Chrome reuse still works per
+          # worker via the conftest _state_drivers pool.
+          pytest "${{ inputs.test_path }}" \
+            -n "${{ inputs.workers }}" \
+            --dist load \
+            --timeout=120 \
+            --reruns 2 --reruns-delay 1 \
+            --durations-path="$DURATION_FILE" \
+            --html="reports/test_report_shard_${{ matrix.shard }}.html" \
+            --self-contained-html \
+            --junitxml="reports/junit_shard_${{ matrix.shard }}.xml" \
+            "${SPLIT_ARGS[@]}" \
+            "${MARKER_ARGS[@]}"
+
+      - name: Upload shard reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-shard-${{ matrix.shard }}
+          path: |
+            reports/test_report_shard_${{ matrix.shard }}.html
+            reports/junit_shard_${{ matrix.shard }}.xml
+            reports/test_execution.log
+            reports/self_healing/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-shard-${{ matrix.shard }}
+          path: |
+            screenshots/
+            reports/screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  summary:
+    name: Test Summary
+    needs: test
+    if: always() && needs.test.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "requirements.txt"
+
+      - name: Install merge dependencies
+        shell: bash
+        run: uv pip install pytest-html pytest-metadata --system
+
+      - name: Download shard reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-reports-shard-*
+          path: reports
+          merge-multiple: true
+
+      - name: Merge shard reports
+        shell: bash
+        run: python3 scripts/merge_test_reports.py
+
+      - name: Upload consolidated report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-test-report
+          path: reports/report.html
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Publish JUnit results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: reports/junit_shard_*.xml
+          check_name: Test Results (${{ inputs.markers || 'all' }})
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = '${{ needs.test.result }}';
+            const markers = '${{ inputs.markers }}' || 'all';
+            const shards = JSON.parse('${{ inputs.shards }}').length;
+            const workers = '${{ inputs.workers }}';
+            const env = '${{ inputs.target_env }}';
+            const status = result === 'success' ? '✅ passed' : '❌ failed';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                `## QA Tests ${status}`,
+                ``,
+                `- **Markers**: \`${markers}\``,
+                `- **Sharding**: ${shards} shards × ${workers} workers`,
+                `- **Target env**: ${env}`,
+                ``,
+                `Download the **consolidated-test-report** artifact for the merged \`report.html\`.`,
+              ].join('\n'),
+            });

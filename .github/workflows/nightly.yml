@@ -1,0 +1,27 @@
+name: Nightly — Full Regression
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # 02:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: Target environment
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: "[1,2,3,4]"
+      workers: 4
+      target_env: ${{ inputs.target_env || 'dev' }}
+      bootstrap_states: true
+    secrets: inherit

@@ -1,0 +1,23 @@
+name: Push to Dev — Smoke
+
+on:
+  push:
+    branches: [dev]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+
+concurrency:
+  group: dev-push
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: "[1]"
+      workers: 4
+      target_env: dev
+    secrets: inherit

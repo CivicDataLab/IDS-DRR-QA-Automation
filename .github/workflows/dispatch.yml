@@ -1,0 +1,95 @@
+name: Dispatch Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Which test scope to run
+        type: choice
+        options: [smoke, regression]
+        default: smoke
+      target_env:
+        description: Target environment
+        type: choice
+        options: [dev, staging, prod]
+        default: dev
+  repository_dispatch:
+    types: [frontend-deployed, backend-deployed]
+
+concurrency:
+  group: dispatch-${{ github.event.action || github.event.inputs.scope }}-${{ github.event.client_payload.environment || github.event.inputs.target_env }}
+  cancel-in-progress: false
+
+jobs:
+  log:
+    name: Log dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show context
+        shell: bash
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "Source repo: ${{ github.event.client_payload.source_repo }}"
+            echo "Environment: ${{ github.event.client_payload.environment }}"
+            echo "Commit: ${{ github.event.client_payload.commit }}"
+            echo "Actor: ${{ github.event.client_payload.actor }}"
+          else
+            echo "Scope: ${{ inputs.scope }}"
+            echo "Target env: ${{ inputs.target_env }}"
+          fi
+
+  # ─── repository_dispatch routing ─────────────────────────────────────────
+
+  # Dev deployment → smoke only
+  on-dev-deploy:
+    name: Dev deploy → smoke
+    if: |
+      github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.environment == 'dev'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: "[1]"
+      workers: 4
+      target_env: dev
+    secrets: inherit
+
+  # Prod/staging deployment → full regression
+  on-prod-deploy:
+    name: Prod deploy → full regression
+    if: |
+      github.event_name == 'repository_dispatch' &&
+      contains(fromJSON('["prod","staging","main"]'), github.event.client_payload.environment)
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: "[1,2,3,4]"
+      workers: 4
+      target_env: prod
+      bootstrap_states: true
+    secrets: inherit
+
+  # ─── workflow_dispatch routing ───────────────────────────────────────────
+
+  manual-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'smoke'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: "[1]"
+      workers: 4
+      target_env: ${{ inputs.target_env }}
+    secrets: inherit
+
+  manual-regression:
+    if: github.event_name == 'workflow_dispatch' && inputs.scope == 'regression'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: "[1,2,3,4]"
+      workers: 4
+      target_env: ${{ inputs.target_env }}
+      bootstrap_states: true
+    secrets: inherit

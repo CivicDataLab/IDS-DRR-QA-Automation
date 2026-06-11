@@ -13,6 +13,7 @@ pytest-json-report>=1.5.0
 pytest-xdist>=3.5.0
 pytest-split>=0.8.0
 pytest-rerunfailures>=12.0
+pytest-timeout>=2.3.0
 
 # Optional utilities
 pdfkit>=1.0.0

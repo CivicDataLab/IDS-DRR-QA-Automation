@@ -288,12 +288,18 @@ class AnalyticsPage(BasePage):
 
     def select_district(self, district_name):
         """Select district from dropdown and wait for revenue circle dropdown to be ready"""
-        from utils.wait_helpers import wait_for_dropdown_options
+        from utils.wait_helpers import wait_for_dropdown_options, wait_for_dropdown_option_text
 
         # Wait for district dropdown to have options before attempting selection.
         # The dropdown is dynamically rendered after view selection, so we must
         # wait for it explicitly — page load complete alone is not sufficient.
         self.wait_for_district_dropdown(timeout=20)
+
+        # Guard against stale options from a previously-selected state (browser is
+        # reused across states): wait until THIS district has actually loaded.
+        wait_for_dropdown_option_text(
+            self.driver, AnalyticsPageLocators.DISTRICT_SELECT, district_name, timeout=20
+        )
 
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.DISTRICT_SELECT,
@@ -327,14 +333,15 @@ class AnalyticsPage(BasePage):
             bool: True if successful, False otherwise
         """
         from selenium.webdriver.support.ui import Select
-        from utils.wait_helpers import wait_for_dropdown_options
+        from utils.wait_helpers import wait_for_dropdown_options, wait_for_dropdown_option_text
 
         # Wait for page load to complete
         self._wait_for_page_load_complete()
 
-        # Double-check dropdown has options (should already be populated from select_district)
+        # Wait for the dependent dropdown to populate — use a longer timeout in CI where
+        # the dev server responds slowly under parallel worker load.
         print(f"✅ Verifying revenue circle/block dropdown has options...")
-        if wait_for_dropdown_options(self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, timeout=5):
+        if wait_for_dropdown_options(self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, timeout=30):
             print(f"✅ Dropdown ready for selection")
         else:
             print(f"⚠️ Timeout waiting for dropdown to populate")
@@ -347,6 +354,12 @@ class AnalyticsPage(BasePage):
             except Exception:
                 pass
             return False
+
+        # Guard against stale revenue circles from the previous district/state:
+        # wait until THIS revenue circle has loaded before selecting.
+        wait_for_dropdown_option_text(
+            self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, revenue_circle_name, timeout=30
+        )
 
         success = self.select_dropdown_by_text(
             AnalyticsPageLocators.REVENUE_CIRCLE_SELECT,

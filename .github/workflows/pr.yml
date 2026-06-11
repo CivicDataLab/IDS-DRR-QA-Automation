@@ -1,0 +1,39 @@
+name: PR Checks
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/pull_request_template.md"
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # PRs targeting dev or any non-main branch: fast smoke only
+  smoke:
+    name: Smoke (dev)
+    if: github.base_ref != 'main'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: smoke
+      shards: "[1]"
+      workers: 4
+      target_env: dev
+    secrets: inherit
+
+  # PRs targeting main: full regression against dev URL (must be green to merge)
+  regression:
+    name: Full Regression (pre-merge)
+    if: github.base_ref == 'main'
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: "[1,2,3,4]"
+      workers: 4
+      target_env: dev
+      bootstrap_states: true
+    secrets: inherit
