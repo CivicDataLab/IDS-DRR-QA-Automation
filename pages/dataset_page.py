@@ -62,11 +62,13 @@ class DatasetInfoPage(BasePage):
         return success
 
     def toggle_share_dataset(self):
-        """Toggle share dataset button"""
+        """Toggle share dataset button (open then close)."""
+        self.scroll_to_element(DatasetInfoPageLocators.SHARE_DATASET)
         success = self.click(DatasetInfoPageLocators.SHARE_DATASET, "Share Dataset")
         if success:
             self.take_screenshot("share_dataset_button.png", self.screenshot_dir)
-            # Click again to close
+            # Wait for the panel animation to settle before closing
+            self.find_clickable_element(DatasetInfoPageLocators.SHARE_DATASET, timeout=5)
             self.click(DatasetInfoPageLocators.SHARE_DATASET, "Share Dataset (close)")
         return success
 
