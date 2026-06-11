@@ -338,9 +338,10 @@ class AnalyticsPage(BasePage):
         # Wait for page load to complete
         self._wait_for_page_load_complete()
 
-        # Double-check dropdown has options (should already be populated from select_district)
+        # Wait for the dependent dropdown to populate — use a longer timeout in CI where
+        # the dev server responds slowly under parallel worker load.
         print(f"✅ Verifying revenue circle/block dropdown has options...")
-        if wait_for_dropdown_options(self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, timeout=5):
+        if wait_for_dropdown_options(self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, timeout=30):
             print(f"✅ Dropdown ready for selection")
         else:
             print(f"⚠️ Timeout waiting for dropdown to populate")
@@ -357,7 +358,7 @@ class AnalyticsPage(BasePage):
         # Guard against stale revenue circles from the previous district/state:
         # wait until THIS revenue circle has loaded before selecting.
         wait_for_dropdown_option_text(
-            self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, revenue_circle_name, timeout=20
+            self.driver, AnalyticsPageLocators.REVENUE_CIRCLE_SELECT, revenue_circle_name, timeout=30
         )
 
         success = self.select_dropdown_by_text(
