@@ -21,7 +21,7 @@ class DatasetInfoPageLocators:
     # Action buttons
     VISIT_SOURCE_WEBSITE = (By.XPATH, "/html/body/main/main/div[2]/div/div[1]/div/div/div[3]/div[1]/a/span[1]")
     GITHUB_REPO = (By.XPATH, "/html/body/main/main/div[2]/div/div[1]/div/div/div[3]/div[2]/a/span[1]")
-    SHARE_DATASET = (By.XPATH, "/html/body/main/main/div[2]/div/div[1]/div/div/div[3]/div[3]/button/span/span/div/span[1]")
+    SHARE_DATASET = (By.XPATH, "/html/body/main/main/div[2]/div/div[1]/div/div/div[3]/div[3]/button")
 
     # Visualizations
     VISUALIZATION_1 = (By.XPATH, "/html/body/main/main/div[2]/div/div[2]/div[1]/div[1]/div/div/div[1]/div/div")

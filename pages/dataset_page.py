@@ -64,13 +64,25 @@ class DatasetInfoPage(BasePage):
     def toggle_share_dataset(self):
         """Toggle share dataset button (open then close)."""
         self.scroll_to_element(DatasetInfoPageLocators.SHARE_DATASET)
-        success = self.click(DatasetInfoPageLocators.SHARE_DATASET, "Share Dataset")
-        if success:
+        element = self.find_element(DatasetInfoPageLocators.SHARE_DATASET, timeout=10)
+        if not element:
+            print("❌ Share Dataset button not found")
+            return False
+        try:
+            self.driver.execute_script("arguments[0].click();", element)
+            print("✅ Share Dataset clicked")
             self.take_screenshot("share_dataset_button.png", self.screenshot_dir)
-            # Wait for the panel animation to settle before closing
-            self.find_clickable_element(DatasetInfoPageLocators.SHARE_DATASET, timeout=5)
-            self.click(DatasetInfoPageLocators.SHARE_DATASET, "Share Dataset (close)")
-        return success
+            # Wait for panel animation then close
+            import time
+            time.sleep(0.5)
+            element = self.find_element(DatasetInfoPageLocators.SHARE_DATASET, timeout=5)
+            if element:
+                self.driver.execute_script("arguments[0].click();", element)
+                print("✅ Share Dataset closed")
+            return True
+        except Exception as e:
+            print(f"❌ Error clicking Share Dataset: {e}")
+            return False
 
     def view_visualization_1(self):
         """Scroll to and view first visualization"""
