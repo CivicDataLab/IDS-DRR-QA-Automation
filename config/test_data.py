@@ -20,7 +20,7 @@ class AnalyticsTestData:
         },
         'bihar': {
             'district': 'Patna',
-            'revenue_circle': 'Patna rural'
+            'revenue_circle': 'Athmalgola'
         },
         'uttar_pradesh': {
             'district': 'Lucknow',
