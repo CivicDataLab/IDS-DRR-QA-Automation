@@ -92,9 +92,12 @@ class TestDatasetSelection:
         initial_url = driver.current_url
         assert dataset_page.click_first_dataset(), "Failed to click first dataset"
 
-        # Verify we're on detail page (URL changed)
-        import time
-        time.sleep(1)  # Wait for navigation
+        # Verify we're on detail page (URL changed) — wait up to 10s for SPA navigation
+        from selenium.webdriver.support.ui import WebDriverWait
+        try:
+            WebDriverWait(driver, 10).until(lambda d: d.current_url != initial_url)
+        except Exception:
+            pass
         current_url = driver.current_url
         assert current_url != initial_url, "URL did not change after clicking dataset"
         assert "datasets" in current_url.lower(), "Not on a dataset detail page"
