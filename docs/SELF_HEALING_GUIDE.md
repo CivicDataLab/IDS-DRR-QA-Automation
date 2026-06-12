@@ -46,10 +46,10 @@ Edit `config/self_healing_config.py`:
 ```python
 class SelfHealingConfig:
     ENABLED = True
-    MAX_HEALING_ATTEMPTS = 3  # Optimized from 5 to 3
+    MAX_HEALING_ATTEMPTS = 3
     LEARNING_MODE = True
-    HEALING_TIMEOUT = 3       # Optimized from 5 to 3 seconds
-    MAX_RETRIES = 2           # Optimized from 3 to 2
+    HEALING_TIMEOUT = 3
+    MAX_RETRIES = 2
     STRATEGIES = [
         "original",
         "learned",
@@ -167,8 +167,7 @@ pytest tests/ -v --log-cli-level=DEBUG
 
 **Too aggressive:**
 ```python
-# Reduce attempts in config (current default is 3)
-MAX_HEALING_ATTEMPTS = 2  # Further reduce to 2 if needed
+MAX_HEALING_ATTEMPTS = 2
 ```
 
 ### Parallel Issues

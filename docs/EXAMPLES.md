@@ -216,29 +216,6 @@ cat reports/self_healing/healing_report_*.json | jq '.events[].strategy' | sort 
 cat config/learned_locators.json | jq
 ```
 
-## Selective Parallel
-
-```python
-# In test file
-@pytest.mark.parallel
-class TestParallelSafe:
-    def test_read_only(self, driver):
-        pass
-
-@pytest.mark.serial
-class TestMustBeSerial:
-    def test_db_modification(self, driver):
-        pass
-```
-
-```bash
-# Run parallel tests
-pytest -n 4 -m parallel -v
-
-# Run serial tests
-pytest -m serial -v
-```
-
 ## Common Patterns
 
 ### Pre-Commit Hook
