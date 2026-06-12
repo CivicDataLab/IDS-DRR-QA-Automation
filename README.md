@@ -73,7 +73,7 @@ pytest -n 8 tests/ -v      # 8 workers
 ```bash
 # Push to trigger CI/CD
 git push origin main    # Full test suite
-git push origin dev     # Smoke tests + full suite
+git push origin dev     # Smoke tests
 
 # Or manually via GitHub Actions UI
 # Select environment: dev (smoke only), prod (full suite)
