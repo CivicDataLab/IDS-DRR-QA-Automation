@@ -192,7 +192,7 @@ Cross-state analysis:
 - Generates coverage comparison reports
 - Identifies inconsistencies
 
-#### 5. `TestAllStatesIndicatorSmoke` (NEW)
+#### 5. `TestAllStatesIndicatorSmoke`
 Comprehensive smoke test for all states:
 - Tests all 5 states in a single flow
 - For each state validates:
@@ -479,19 +479,3 @@ For issues or questions:
 3. Check generated screenshots in `screenshots/analytics/`
 4. Review self-healing logs in `reports/self_healing/`
 
-## Changelog
-
-### Version 1.0.0 (Current)
-- ✅ Automated state indicator discovery
-- ✅ Dynamic test generation
-- ✅ Parallel execution support
-- ✅ Enhanced multi-state reporting
-- ✅ Self-healing locator integration
-- ✅ 5 states supported (Assam, Himachal Pradesh, Odisha, Bihar, Uttar Pradesh)
-
-### Roadmap
-- [ ] Add Chart and Table view testing
-- [ ] Add district-level multi-state testing
-- [ ] Add performance benchmarking across states
-- [ ] Add visual regression testing
-- [ ] Add API-level indicator validation
