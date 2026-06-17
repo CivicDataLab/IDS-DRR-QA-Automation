@@ -1,6 +1,6 @@
 state_name: Uttar pradesh
 state_key: uttar_pradesh
-discovered_at: '2026-01-06T15:32:12.942658'
+discovered_at: '2026-06-17T12:49:56.505219'
 sections:
   hazard:
     name: Hazard
@@ -43,9 +43,4 @@ sections:
       section: Vulnerability
   government_response:
     name: Government Response
-    indicators:
-    - name: Total Value of Flood Tenders
-      key: total_value_of_flood_tenders
-      position: 1
-      enabled: true
-      section: Government Response
+    indicators: []

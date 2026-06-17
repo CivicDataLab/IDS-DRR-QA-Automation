@@ -4,18 +4,18 @@ from selenium.webdriver.common.by import By
 class HeaderLocators:
     """Locators for header/navigation elements"""
 
-    # Navigation links — absolute position-based paths that work reliably
-    HOME_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[1]/div/span")
-    ANALYTICS_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[2]/div/span")
-    DATASETS_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[3]/div/span")
-    ABOUT_US_LINK = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[4]/div/span")
+    # Navigation links — text-based, survive DOM restructuring
+    HOME_LINK = (By.XPATH, "//header//a[normalize-space()='Home']")
+    ANALYTICS_LINK = (By.XPATH, "//header//a[normalize-space()='Analytics']")
+    DATASETS_LINK = (By.XPATH, "//header//a[normalize-space()='Datasets']")
+    ABOUT_US_LINK = (By.XPATH, "//header//a[normalize-space()='About us']")
 
-    # Alternative locators using position (fallback)
-    ANALYTICS_LINK_ALT = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[2]/div/span")
-    DATASETS_LINK_ALT = (By.XPATH, "/html/body/main/header/div/div[2]/div[1]/a[3]/div/span")
+    # Alternative locators — href-based fallback
+    ANALYTICS_LINK_ALT = (By.XPATH, "//header//a[contains(@href,'/analytics')]")
+    DATASETS_LINK_ALT = (By.XPATH, "//header//a[contains(@href,'/datasets')]")
 
-    # Logo
-    HEADER_LOGO = (By.XPATH, "//header//img[@alt='IDS-DRR Logo']")
+    # Logo — alt text is "IDS-DRR home" (not "IDS-DRR Logo")
+    HEADER_LOGO = (By.XPATH, "//header//img[@alt='IDS-DRR home']")
 
     # Language dropdown
     LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")

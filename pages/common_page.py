@@ -31,6 +31,25 @@ class CommonPage(BasePage):
         """Navigate to About Us page"""
         return self.click(HeaderLocators.ABOUT_US_LINK, "About Us Link")
 
+    def navigate_to_glossary(self):
+        """Navigate to Glossary page via nav link or direct URL."""
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        from config.config import Config
+
+        links = self.driver.find_elements(By.XPATH, "//a[contains(@href,'glossary')]")
+        if links:
+            try:
+                links[0].click()
+                WebDriverWait(self.driver, 5).until(EC.url_contains('glossary'))
+                return True
+            except Exception:
+                pass
+
+        self.driver.get(Config.BASE_URL.rstrip('/') + "/en/glossary")
+        return "glossary" in self.driver.current_url.lower()
+
     # Header Visibility Checks
     def is_header_logo_visible(self):
         """Check if header logo is visible"""
