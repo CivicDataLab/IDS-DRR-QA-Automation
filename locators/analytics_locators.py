@@ -4,10 +4,10 @@ from selenium.webdriver.common.by import By
 class AnalyticsPageLocators:
     """Locators for Analytics page elements"""
 
-    # View toggle buttons
-    MAP_VIEW_BUTTON = (By.XPATH, "/html/body/main/div/main/div/div[1]/button[1]/span")
-    CHART_VIEW_BUTTON = (By.XPATH, "/html/body/main/div/main/div/div[1]/button[2]/span")
-    TABLE_VIEW_BUTTON = (By.XPATH, "/html/body/main/div/main/div/div[1]/button[3]/span")
+    # View toggle tabs — text is "Map View", "Chart View", "Table View"
+    MAP_VIEW_BUTTON = (By.XPATH, "//button[normalize-space()='Map View']")
+    CHART_VIEW_BUTTON = (By.XPATH, "//button[normalize-space()='Chart View']")
+    TABLE_VIEW_BUTTON = (By.XPATH, "//button[normalize-space()='Table View']")
 
     # Dropdowns
     DISTRICT_SELECT = (By.NAME, "district-select")
@@ -24,79 +24,71 @@ class AnalyticsPageLocators:
     @staticmethod
     def get_view_button(index):
         """Get locator for view button by index (1=map, 2=chart, 3=table)"""
-        return (By.XPATH, f"/html/body/main/div/main/div/div[1]/button[{index}]/span")
+        return (By.XPATH, f"(//button[normalize-space()='Map View' or normalize-space()='Chart View' or normalize-space()='Table View'])[{index}]")
 
 
 class HazardLocators:
     """Locators for Hazard section in Analytics"""
 
-    # Expand/Collapse - target the parent div that contains both expand and collapse states
-    EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[1]/div/div/div[1]")
-    # Collapse button specifically (visible on hover) - targets the button with upward chevron
-    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[1]/div/div/div[1]//button[@type='button']")
+    EXPAND_COLLAPSE = (By.CSS_SELECTOR, "aside [aria-label='Hazard']")
+    COLLAPSE_BUTTON = (By.CSS_SELECTOR, "aside [aria-label='Hazard']")
 
-    # Options
-    TOTAL_MONTHLY_RAINFALL = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/span/div/label/span")
-    SUM_INUNDATION_INTENSITIES = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[2]/div/span/div/label/span")
-    MEAN_ELEVATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[2]/div[3]/div/span/div/label/span")
+    # Indicators — aria-label matches the button text discovered from live UI (Assam baseline)
+    TOTAL_MONTHLY_RAINFALL = (By.CSS_SELECTOR, "aside [aria-label='Total Monthly Rainfall']")
+    SUM_INUNDATION_INTENSITIES = (By.CSS_SELECTOR, "aside [aria-label='Sum of inundation intensities']")
+    MEAN_ELEVATION = (By.CSS_SELECTOR, "aside [aria-label='Mean Elevation']")
 
 
 class ExposureLocators:
     """Locators for Exposure section in Analytics"""
 
-    # Expand/Collapse - target the parent div that contains both expand and collapse states
-    EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div/div/div/div[1]")
-    # Collapse button specifically (visible on hover) - targets the button with upward chevron
-    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div/div/div/div[1]//button[@type='button']")
+    EXPAND_COLLAPSE = (By.CSS_SELECTOR, "aside [aria-label='Exposure']")
+    COLLAPSE_BUTTON = (By.CSS_SELECTOR, "aside [aria-label='Exposure']")
 
-    # Options
-    TOTAL_HOUSEHOLDS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]/div[1]/div/span/div/label/span")
-    POPULATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]/div[2]/div/span/div/label/span")
-    ELDERLY_POPULATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]/div[3]/div/span/div/label/span")
-    CHILDREN_POPULATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]/div[4]/div/span/div/label/span")
+    # Indicators
+    TOTAL_HOUSEHOLDS = (By.CSS_SELECTOR, "aside [aria-label='Total Number of Households']")
+    POPULATION = (By.CSS_SELECTOR, "aside [aria-label='Population']")
+    ELDERLY_POPULATION = (By.CSS_SELECTOR, "aside [aria-label='Elderly population']")
+    CHILDREN_POPULATION = (By.CSS_SELECTOR, "aside [aria-label='Children population']")
 
 
 class VulnerabilityLocators:
     """Locators for Vulnerability section in Analytics"""
 
-    # Expand/Collapse - target the parent div that contains both expand and collapse states
-    EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div/div/div/div[1]")
-    # Collapse button specifically (visible on hover) - targets the button with upward chevron
-    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div/div/div/div[1]//button[@type='button']")
+    EXPAND_COLLAPSE = (By.CSS_SELECTOR, "aside [aria-label='Vulnerability']")
+    COLLAPSE_BUTTON = (By.CSS_SELECTOR, "aside [aria-label='Vulnerability']")
 
-    # Infrastructure Options
-    HEALTH_CENTRES = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[1]/div/span/div/label/span")
-    DOMESTIC_ELECTRICITY = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[2]/div/span/div/label/span")
-    PIPED_WATER = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[3]/div/span/div/label/span")
-    WITHOUT_SANITATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[4]/div/span/div/label/span")
-    NUMBER_OF_SCHOOLS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[5]/div/span/div/label/span")
-    RAIL_LENGTH = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[6]/div/span/div/label/span")
-    ROAD_LENGTH = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[7]/div/span/div/label/span")
-    NET_SOWN_AREA = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[8]/div/span/div/label/span")
-    MEAN_SEX_RATIO = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[9]/div/span/div/label/span")
+    # Infrastructure indicators
+    HEALTH_CENTRES = (By.CSS_SELECTOR, "aside [aria-label='Number of Health Centres']")
+    DOMESTIC_ELECTRICITY = (By.CSS_SELECTOR, "aside [aria-label='Average availablity of domestic electricity']")
+    PIPED_WATER = (By.CSS_SELECTOR, "aside [aria-label='Percentage of households with piped water connection']")
+    WITHOUT_SANITATION = (By.CSS_SELECTOR, "aside [aria-label='Percentage of households without sanitation facilities']")
+    NUMBER_OF_SCHOOLS = (By.CSS_SELECTOR, "aside [aria-label='Number of Schools']")
+    RAIL_LENGTH = (By.CSS_SELECTOR, "aside [aria-label='Length of rail in the region']")
+    ROAD_LENGTH = (By.CSS_SELECTOR, "aside [aria-label='Length of Road']")
+    NET_SOWN_AREA = (By.CSS_SELECTOR, "aside [aria-label='Net Sown Area']")
+    MEAN_SEX_RATIO = (By.CSS_SELECTOR, "aside [aria-label='Mean Sex Ratio']")
 
-    # Impact Options
-    POPULATION_AFFECTED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[10]/div/span/div/label/span")
-    HUMAN_LIVES_LOST = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[11]/div/span/div/label/span")
-    CROP_AREA_AFFECTED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[12]/div/span/div/label/span")
-    EMBANKMENTS_AFFECTED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[13]/div/span/div/label/span")
-    ROADS_DAMAGED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[14]/div/span/div/label/span")
-    BRIDGES_DAMAGED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[15]/div/span/div/label/span")
-    EMBANKMENTS_BREACHED = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]/div[16]/div/span/div/label/span")
+    # Impact indicators
+    POPULATION_AFFECTED = (By.CSS_SELECTOR, "aside [aria-label='Total Population Affected']")
+    HUMAN_LIVES_LOST = (By.CSS_SELECTOR, "aside [aria-label='Human Lives Lost']")
+    CROP_AREA_AFFECTED = (By.CSS_SELECTOR, "aside [aria-label='Total Crop Area Affected']")
+    EMBANKMENTS_AFFECTED = (By.CSS_SELECTOR, "aside [aria-label='Total Number of Embankments Affected']")
+    ROADS_DAMAGED = (By.CSS_SELECTOR, "aside [aria-label='Total Number of Roads Damaged']")
+    BRIDGES_DAMAGED = (By.CSS_SELECTOR, "aside [aria-label='Number of Bridges damaged']")
+    EMBANKMENTS_BREACHED = (By.CSS_SELECTOR, "aside [aria-label='Number of embankments breached']")
 
 
 class GovtResponseLocators:
     """Locators for Government Response section in Analytics"""
 
-    # Expand/Collapse - target the parent div that contains both expand and collapse states
-    EXPAND_COLLAPSE = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div/div/div/div[1]")
-    # Collapse button specifically (visible on hover) - targets the button with upward chevron
-    COLLAPSE_BUTTON = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div/div/div/div[1]//button[@type='button']")
+    EXPAND_COLLAPSE = (By.CSS_SELECTOR, "aside [aria-label='Government Response']")
+    COLLAPSE_BUTTON = (By.CSS_SELECTOR, "aside [aria-label='Government Response']")
 
-    # Options
-    FLOOD_TENDERS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[1]/div/span/div/label/span")
-    SDRF = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[2]/div/span/div/label/span")
-    REPAIRS_RESTORATION = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[3]/div/span/div/label/span")
-    IMMEDIATE_MEASURES = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[4]/div/span/div/label/span")
-    OTHERS = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[5]/div/span/div/label/span")
-    FUNDS_ALLOCATED_SDRF_SEC = (By.XPATH, "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]/div[6]/div/span/div/label/span")
+    # Indicators
+    FLOOD_TENDERS = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders']")
+    SDRF = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders Under SDRF']")
+    REPAIRS_RESTORATION = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders for Repairs and Restoration']")
+    IMMEDIATE_MEASURES = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders for Immediate Measures']")
+    OTHERS = (By.CSS_SELECTOR, "aside [aria-label='Total value of flood tenders related to Others']")
+    FUNDS_ALLOCATED_SDRF_SEC = (By.CSS_SELECTOR, "aside [aria-label='Total value of funds allocated through SDRF during SEC meetings']")
