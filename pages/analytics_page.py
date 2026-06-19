@@ -1085,3 +1085,19 @@ class AnalyticsPage(BasePage):
         screenshot_name = f"{screenshot_prefix}govt_response_{screenshot_suffix}" if screenshot_prefix else None
 
         return self.interact_with_option(locator, display_name, screenshot_name, self.screenshot_dir)
+
+
+    def is_calendar_visible(self):
+        """Check the calendar/date-picker button is visible on the analytics page"""
+        return self.is_element_visible(
+            AnalyticsPageLocators.CALENDAR_BUTTON, "Calendar button", timeout=10
+        )
+
+    def open_calendar(self):
+        """Click the calendar button to open the date/month picker"""
+        return self.click(AnalyticsPageLocators.CALENDAR_BUTTON, "Calendar button")
+
+    def select_calendar_month(self, month_value):
+        """Select a specific month in the open calendar (month_value as string e.g. '7')"""
+        locator = AnalyticsPageLocators.get_calendar_month(month_value)
+        return self.click(locator, f"Calendar month {month_value}")

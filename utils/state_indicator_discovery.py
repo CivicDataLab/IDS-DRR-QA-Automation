@@ -18,11 +18,9 @@ import os
 class StateIndicatorDiscovery:
     """Discovers and validates available indicators for each state"""
 
-    # State dropdown configuration
-    STATE_DROPDOWN_LOCATOR = (By.XPATH, "//select[contains(@class, 'state-select') or @name='state-select']")
-    STATE_DROPDOWN_OPTIONS = (By.CSS_SELECTOR, "select option")
+    STATE_DROPDOWN_LOCATOR = (By.CSS_SELECTOR, "aside select")
+    STATE_DROPDOWN_OPTIONS = (By.CSS_SELECTOR, "aside select option")
 
-    # Fallback: Check for state name in the sidebar/dropdown
     STATE_LIST = [
         "Assam",
         "Himachal pradesh",
@@ -30,6 +28,15 @@ class StateIndicatorDiscovery:
         "Bihar",
         "Uttar pradesh"
     ]
+
+    # URL slugs match the <select> option values (hyphens, not underscores)
+    STATE_URL_SLUGS = {
+        "Assam": "assam",
+        "Himachal pradesh": "himachal-pradesh",
+        "Odisha": "odisha",
+        "Bihar": "bihar",
+        "Uttar pradesh": "uttar-pradesh",
+    }
 
     def __init__(self, driver=None):
         """
@@ -82,11 +89,8 @@ class StateIndicatorDiscovery:
             list: Available state names
         """
         try:
-            # Find the state select dropdown
-            # It's a <select name="State"> element with <option> children
-
-            # Find the select element
-            select_element = self.driver.find_element(By.NAME, "State")
+            # Find the state select dropdown inside the aside sidebar
+            select_element = self.driver.find_element(By.CSS_SELECTOR, "aside select")
 
             # Get all option elements
             options = select_element.find_elements(By.TAG_NAME, "option")
@@ -113,60 +117,44 @@ class StateIndicatorDiscovery:
 
     def select_state(self, state_name):
         """
-        Select a state from the <select> dropdown
+        Navigate directly to a state's analytics page via URL.
 
         Args:
-            state_name: Name of the state to select (e.g., "Assam", "Himachal pradesh")
+            state_name: Name of the state (e.g., "Assam", "Himachal pradesh")
 
         Returns:
             bool: Success status
         """
-        from selenium.webdriver.support.ui import Select
-
         try:
-            # Navigate to analytics page first to ensure we're on the right page
-            if "/analytics" not in self.driver.current_url:
-                self.navigate_to_analytics()
+            url_slug = self.STATE_URL_SLUGS.get(state_name)
 
-            # Find the state select dropdown
-            select_element = self.wait.until(
-                EC.presence_of_element_located((By.NAME, "State"))
-            )
+            # Fallback: read slug from the live select element
+            if not url_slug:
+                try:
+                    from selenium.webdriver.support.ui import Select
+                    sel_el = self.wait.until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "aside select"))
+                    )
+                    select = Select(sel_el)
+                    for opt in select.options:
+                        if opt.text.strip().lower() == state_name.lower():
+                            url_slug = opt.get_attribute("value")
+                            break
+                except Exception:
+                    pass
 
-            # Create Select object
-            select = Select(select_element)
+            if not url_slug:
+                print(f"❌ No URL slug found for state: {state_name}")
+                return False
 
-            # Select by visible text (case-sensitive match)
-            try:
-                select.select_by_visible_text(state_name)
-                print(f"✅ Selected state: {state_name}")
-            except NoSuchElementException:
-                # Try case-insensitive match
-                print(f"⚠️  Exact match failed, trying case-insensitive match...")
-                options = select.options
-                for option in options:
-                    if option.text.strip().lower() == state_name.lower():
-                        select.select_by_visible_text(option.text.strip())
-                        print(f"✅ Selected state: {option.text.strip()}")
-                        break
-                else:
-                    raise NoSuchElementException(f"Could not find state: {state_name}")
-
-            # Wait for page to update after state selection
-            time.sleep(2)
+            target_url = f"{Config.BASE_URL}en/{url_slug}/analytics?indicator=risk-score&view=map"
+            self.driver.get(target_url)
+            time.sleep(3)
+            print(f"✅ Navigated to state: {state_name} ({target_url})")
             return True
 
-        except TimeoutException:
-            print(f"❌ State dropdown not found")
-            return False
-        except NoSuchElementException as e:
-            print(f"❌ Could not find state option: {state_name}")
-            print(f"   Error: {e}")
-            return False
         except Exception as e:
-            print(f"❌ Failed to select state {state_name}: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"❌ Failed to navigate to state {state_name}: {e}")
             return False
 
     def discover_section_indicators(self, section_name, expand_locator, container_xpath):
@@ -203,44 +191,39 @@ class StateIndicatorDiscovery:
                     self.driver.execute_script("arguments[0].click();", expand_btn)
                 time.sleep(0.5)
 
-            # Find all indicator label elements
-            # Labels have aria-label attribute with the indicator name
-            # Structure: <label aria-label="Total Monthly Rainfall"><span>Total Monthly Rainfall</span></label>
-
-            # Try multiple strategies to find indicators
+            # Find all indicator elements within the expanded section container.
+            # New UI: indicators are <div role="button" aria-label="..."> elements.
             indicator_elements = []
 
-            # Strategy 1: Find labels with aria-label attribute (most reliable)
+            # Strategy 1: div[role=button][aria-label] inside the container (current UI)
             try:
-                labels = self.driver.find_elements(
+                role_btns = self.driver.find_elements(
                     By.XPATH,
-                    f"{container_xpath}//label[@aria-label]"
+                    f"{container_xpath}//*[@role='button' and @aria-label]"
                 )
-                if labels:
-                    indicator_elements = labels
-                    print(f"   Found {len(labels)} indicators using aria-label")
+                if role_btns:
+                    indicator_elements = role_btns
+                    print(f"   Found {len(role_btns)} indicators using role=button aria-label")
             except:
                 pass
 
-            # Strategy 2: If no aria-labels found, try finding spans with text
+            # Strategy 2: labels with aria-label (legacy fallback)
             if not indicator_elements:
                 try:
-                    spans = self.driver.find_elements(
+                    labels = self.driver.find_elements(
                         By.XPATH,
-                        f"{container_xpath}//label//span[contains(@class, 'Text-module')]"
+                        f"{container_xpath}//label[@aria-label]"
                     )
-                    if spans:
-                        indicator_elements = spans
-                        print(f"   Found {len(spans)} indicators using span text")
+                    if labels:
+                        indicator_elements = labels
+                        print(f"   Found {len(labels)} indicators using aria-label labels")
                 except:
                     pass
 
             for idx, element in enumerate(indicator_elements, 1):
                 try:
-                    # Get indicator name from aria-label first, fallback to text
-                    indicator_text = element.get_attribute("aria-label")
-                    if not indicator_text:
-                        indicator_text = element.text.strip()
+                    # aria-label holds the display name directly in the new UI
+                    indicator_text = element.get_attribute("aria-label") or element.text.strip()
 
                     if indicator_text:
                         indicator_data = {
@@ -301,7 +284,7 @@ class StateIndicatorDiscovery:
         hazard_indicators = self.discover_section_indicators(
             "Hazard",
             HazardLocators.EXPAND_COLLAPSE,
-            "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[1]/div[2]"
+            "//aside//*[@role='button' and @aria-label='Hazard']/following-sibling::div"
         )
         state_data["sections"]["hazard"] = {
             "name": "Hazard",
@@ -313,7 +296,7 @@ class StateIndicatorDiscovery:
         exposure_indicators = self.discover_section_indicators(
             "Exposure",
             ExposureLocators.EXPAND_COLLAPSE,
-            "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[2]/div[2]"
+            "//aside//*[@role='button' and @aria-label='Exposure']/following-sibling::div"
         )
         state_data["sections"]["exposure"] = {
             "name": "Exposure",
@@ -325,7 +308,7 @@ class StateIndicatorDiscovery:
         vulnerability_indicators = self.discover_section_indicators(
             "Vulnerability",
             VulnerabilityLocators.EXPAND_COLLAPSE,
-            "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[3]/div[2]"
+            "//aside//*[@role='button' and @aria-label='Vulnerability']/following-sibling::div"
         )
         state_data["sections"]["vulnerability"] = {
             "name": "Vulnerability",
@@ -337,7 +320,7 @@ class StateIndicatorDiscovery:
         govt_response_indicators = self.discover_section_indicators(
             "Government Response",
             GovtResponseLocators.EXPAND_COLLAPSE,
-            "/html/body/main/div/aside/div/div[1]/div[4]/div[1]/div/div[2]/div[4]/div[2]"
+            "//aside//*[@role='button' and @aria-label='Government Response']/following-sibling::div"
         )
         state_data["sections"]["government_response"] = {
             "name": "Government Response",

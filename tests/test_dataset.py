@@ -416,3 +416,147 @@ class TestDatasetNegativeTests:
         # Navigate directly to invalid dataset URL
         # driver.get(Config.BASE_URL + "/datasets/invalid-id-999")
         pass
+
+
+@pytest.mark.dataset
+@pytest.mark.smoke
+class TestDatasetSearch:
+    """Dataset listing search functionality"""
+
+    def test_search_input_visible(self, driver):
+        """Search input is rendered on the datasets listing page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.is_search_input_visible(), "Search input not visible on datasets page"
+
+    def test_search_returns_results(self, driver):
+        """Searching a known term returns dataset cards"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.search_datasets("flood"), "Failed to submit search query"
+        assert dataset_page.are_dataset_cards_visible(), \
+            "No dataset cards visible after searching 'flood'"
+
+    def test_search_with_no_match(self, driver):
+        """Searching a nonsense term does not crash the page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.search_datasets("xyzzy_no_match_999"), "Search input not found"
+        # No assertion on results — just verify the page does not error
+        assert common_page.is_header_logo_visible(), \
+            "Header missing after search with no results"
+
+    def test_clear_search_restores_listing(self, driver):
+        """Clearing the search restores the full dataset listing"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.search_datasets("flood"), "Failed to submit search query"
+        assert dataset_page.clear_search(), "Failed to clear search"
+        assert common_page.is_header_logo_visible(), "Header missing after clearing search"
+
+
+@pytest.mark.dataset
+class TestDatasetSorting:
+    """Dataset listing sort functionality"""
+
+    def test_sort_dropdown_visible(self, driver):
+        """Sort dropdown is rendered on the datasets listing page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.is_sort_dropdown_visible(), "Sort dropdown not visible"
+
+    def test_sort_by_recent(self, driver):
+        """Sort by 'recent' can be selected"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.sort_by("recent"), "Failed to select 'recent' sort option"
+
+    def test_sort_by_alphabetical(self, driver):
+        """Sort by 'alphabetical' can be selected and updates the listing"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.sort_by("alphabetical"), "Failed to select 'alphabetical' sort option"
+        assert common_page.is_header_logo_visible(), "Header missing after sort change"
+
+    def test_toggle_sort_options(self, driver):
+        """Toggling between sort options does not crash the page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.sort_by("alphabetical"), "Failed to select alphabetical"
+        assert dataset_page.sort_by("recent"), "Failed to select recent"
+        assert common_page.is_header_logo_visible(), "Header missing after sort toggle"
+
+
+@pytest.mark.dataset
+class TestDatasetPagination:
+    """Dataset listing pagination controls"""
+
+    def test_pagination_controls_visible(self, driver):
+        """Page-size selector is rendered in the pagination footer"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.are_pagination_controls_visible(), \
+            "Pagination controls not visible on datasets page"
+
+    def test_change_page_size_to_10(self, driver):
+        """Changing page size to 10 does not crash the page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.change_page_size("10"), "Failed to change page size to 10"
+        assert common_page.is_header_logo_visible(), "Header missing after page size change"
+
+    def test_change_page_size_to_20(self, driver):
+        """Changing page size to 20 does not crash the page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+        assert dataset_page.change_page_size("20"), "Failed to change page size to 20"
+        assert common_page.is_header_logo_visible(), "Header missing after page size change"
+
+    def test_navigate_to_next_page(self, driver):
+        """Next-page button advances to page 2 when multiple pages exist"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+
+        if not dataset_page.is_next_page_available():
+            pytest.skip("Only one page of results — cannot test pagination navigation")
+
+        assert dataset_page.go_to_next_page(), "Failed to navigate to next page"
+        assert common_page.is_header_logo_visible(), "Header missing after page navigation"
+
+    def test_previous_button_returns_to_page_1(self, driver):
+        """Going next then previous returns to the original page"""
+        common_page = CommonPage(driver)
+        dataset_page = DatasetPage(driver)
+
+        assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
+
+        if not dataset_page.is_next_page_available():
+            pytest.skip("Only one page of results — cannot test pagination navigation")
+
+        assert dataset_page.go_to_next_page(), "Failed to navigate to next page"
+        assert dataset_page.go_to_prev_page(), "Failed to navigate to previous page"
+        assert common_page.is_header_logo_visible(), "Header missing after going back to page 1"

@@ -11,15 +11,13 @@ class DatasetPage(BasePage):
         self.screenshot_dir = Config.DATASETS_SCREENSHOTS_DIR
 
     def apply_source_filter_drims(self):
-        """Apply DRIMS source filter"""
-        # Guard: check the filter element exists (no self-healing) to confirm we're on the right page.
-        # Self-healing relaxed XPath can match arbitrary buttons on wrong pages, so skip it here.
-        if not self.find_element(DatasetPageLocators.SOURCE_FILTER_DRIMS, use_healing=False):
+        """Apply HPSDMA source filter (previously DRIMS; locator updated to match live catalogue)"""
+        if not self.find_element(DatasetPageLocators.SOURCE_FILTER_HPSDMA, use_healing=False):
             print("❌ Source filter element not found — not on datasets listing page")
             return False
         return self.click_and_screenshot(
-            DatasetPageLocators.SOURCE_FILTER_DRIMS,
-            "DRIMS Filter",
+            DatasetPageLocators.SOURCE_FILTER_HPSDMA,
+            "HPSDMA Filter",
             "source_filter_applied.png",
             self.screenshot_dir
         )
@@ -32,6 +30,83 @@ class DatasetPage(BasePage):
             "drims_dataset_info.png",
             self.screenshot_dir
         )
+
+    def is_search_input_visible(self):
+        """Check the dataset search input is visible"""
+        return self.is_element_visible(DatasetPageLocators.SEARCH_INPUT, "Dataset search input")
+
+    def search_datasets(self, query):
+        """Type a query and submit it via the search button"""
+        from selenium.webdriver.common.keys import Keys
+        if not self.send_keys(DatasetPageLocators.SEARCH_INPUT, query, "Dataset search input"):
+            return False
+        # Try clicking the submit button; fall back to Enter key
+        if not self.click(DatasetPageLocators.SEARCH_SUBMIT_BUTTON, "Search submit"):
+            element = self.find_element(DatasetPageLocators.SEARCH_INPUT)
+            if element:
+                element.send_keys(Keys.RETURN)
+        print(f"✅ Searched datasets for '{query}'")
+        return True
+
+    def clear_search(self):
+        """Clear the search input"""
+        try:
+            element = self.find_element(DatasetPageLocators.SEARCH_INPUT)
+            if element:
+                element.clear()
+                from selenium.webdriver.common.keys import Keys
+                element.send_keys(Keys.RETURN)
+                print("✅ Dataset search cleared")
+                return True
+        except Exception as e:
+            print(f"❌ Failed to clear dataset search: {e}")
+        return False
+
+    def is_sort_dropdown_visible(self):
+        """Check the sort dropdown exists (native select is opacity:0; check DOM presence)"""
+        element = self.find_element(DatasetPageLocators.SORT_SELECT, use_healing=False)
+        if element:
+            print("✅ Sort dropdown is accessible")
+            return True
+        print("❌ Sort dropdown not found")
+        return False
+
+    def sort_by(self, option):
+        """Select a sort option ('recent' or 'alphabetical')"""
+        return self.select_dropdown_by_text(DatasetPageLocators.SORT_SELECT, option, "Sort dropdown")
+
+    def are_dataset_cards_visible(self):
+        """Check at least one dataset card is visible"""
+        return self.is_element_visible(DatasetPageLocators.FIRST_DATASET_CARD, "Dataset card", timeout=10)
+
+    def are_pagination_controls_visible(self):
+        """Check the pagination page-size selector exists (native select is opacity:0; check DOM presence)"""
+        element = self.find_element(DatasetPageLocators.PAGINATION_PAGE_SIZE_SELECT, use_healing=False)
+        if element:
+            print("✅ Pagination page-size selector is accessible")
+            return True
+        print("❌ Pagination page-size selector not found")
+        return False
+
+    def change_page_size(self, size):
+        """Select a page size (e.g. '10' or '20') from the pagination footer"""
+        return self.select_dropdown_by_text(DatasetPageLocators.PAGINATION_PAGE_SIZE_SELECT, size, "Page size selector")
+
+    def is_next_page_available(self):
+        """Return True if the Next button is enabled (not on the last page)"""
+        element = self.find_element(DatasetPageLocators.PAGINATION_NEXT_BUTTON, timeout=5, use_healing=False)
+        if element:
+            disabled = element.get_attribute("disabled")
+            return disabled is None
+        return False
+
+    def go_to_next_page(self):
+        """Click the pagination Next button"""
+        return self.click(DatasetPageLocators.PAGINATION_NEXT_BUTTON, "Pagination next")
+
+    def go_to_prev_page(self):
+        """Click the pagination Previous button"""
+        return self.click(DatasetPageLocators.PAGINATION_PREV_BUTTON, "Pagination previous")
 
     def take_dataset_screenshot(self, filename):
         """Take screenshot in datasets directory"""
