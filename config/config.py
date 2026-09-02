@@ -24,6 +24,19 @@ class Config:
     # Environment indicator
     ENVIRONMENT = 'development' if os.getenv('DEV_URL') else 'production'
 
+    # DataSpace instances backing IDS-DRR.
+    # These host the datasets IDS-DRR reads from; an outage here silently breaks
+    # the platform, so availability is smoke-checked directly.
+    DATASPACE_DEV_URL = os.getenv(
+        'DATASPACE_DEV_URL', 'https://dev.dataspace.open-contracting.in'
+    )
+    DATASPACE_PROD_URL = os.getenv(
+        'DATASPACE_PROD_URL', 'https://dataspace.open-contracting.in'
+    )
+
+    # Timeout (seconds) for plain HTTP availability probes
+    HTTP_TIMEOUT = int(os.getenv('HTTP_TIMEOUT', '20'))
+
     # Authentication
     USERNAME = os.getenv('HOME_URL_USERNAME', '')
     PASSWORD = os.getenv('HOME_URL_PASSWORD', '')
