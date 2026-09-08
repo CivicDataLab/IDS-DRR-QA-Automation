@@ -92,13 +92,12 @@ class CommonPage(BasePage):
         Check if a footer logo is visible
 
         Args:
-            logo_name: 'ids_drr', 'cdl', or 'ocp'
+            logo_name: 'cdl' or 'ocp'
 
         Returns:
             bool: Visibility status
         """
         logo_map = {
-            'ids_drr': FooterLocators.IDS_DRR_LOGO,
             'cdl': FooterLocators.CDL_LOGO,
             'ocp': FooterLocators.OCP_LOGO
         }
@@ -174,7 +173,6 @@ class CommonPage(BasePage):
             dict: Results of all checks
         """
         results = {
-            'ids_drr_logo': self.is_footer_logo_visible('ids_drr'),
             'cdl_logo': self.is_footer_logo_visible('cdl'),
             'ocp_logo': self.is_footer_logo_visible('ocp'),
             'rockefeller_logo': self.is_partner_logo_visible('rockefeller'),
@@ -189,23 +187,42 @@ class CommonPage(BasePage):
 
         return results
 
-    def check_analytics_footer_elements(self):
+    def check_global_footer_elements(self):
         """
-        Check visibility of analytics page footer elements
-        Analytics page footer only contains: IDS-DRR, CDL, and OCP logos
-        (Partner logos are not displayed on analytics page)
+        Check visibility of the site-wide footer: CDL and OCP logos only.
+
+        This is the real <footer> element and it's identical on every page
+        except Home — confirmed live 2026-09-08 on /datasets, /about-us and
+        /<state>/analytics on both prod and dev. The Rockefeller/PJMF/ASDMA/
+        HPSDMA "partner" logos are not part of it: they live in a "Supported by"
+        section that only exists on Home (see check_all_footer_elements), so
+        checking for them anywhere else fails a locator that was never going to
+        find anything — and previously did so silently, "passing" via
+        self-healing degrading to the first <a> tag on the page.
 
         Returns:
             dict: Results of all checks
         """
         results = {
-            'ids_drr_logo': self.is_footer_logo_visible('ids_drr'),
             'cdl_logo': self.is_footer_logo_visible('cdl'),
             'ocp_logo': self.is_footer_logo_visible('ocp')
         }
 
         passed = sum(results.values())
         total = len(results)
-        print(f"\nAnalytics Footer Check Summary: {passed}/{total} logos visible")
+        print(f"\nGlobal Footer Check Summary: {passed}/{total} logos visible")
 
         return results
+
+    def check_analytics_footer_elements(self):
+        """
+        Check visibility of the footer on the analytics page.
+
+        Kept as a thin, accurately-scoped alias of check_global_footer_elements():
+        the analytics-page footer is not special, it's the same site-wide footer
+        every non-Home page has.
+
+        Returns:
+            dict: Results of all checks
+        """
+        return self.check_global_footer_elements()

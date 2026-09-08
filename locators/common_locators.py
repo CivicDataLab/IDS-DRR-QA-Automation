@@ -21,11 +21,16 @@ class HeaderLocators:
     LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
 
 
+
 class FooterLocators:
     """Locators for footer elements"""
 
-    # Footer logos
-    IDS_DRR_LOGO = (By.XPATH, "//body//main//footer//div//img[@alt='IDS-DRR Logo']")
+    # Footer logos.
+    # IDS_DRR_LOGO removed 2026-09-08: the footer no longer carries a standalone
+    # IDS-DRR image — confirmed against the live footer markup on prod and dev
+    # (home, /datasets, /assam/analytics), which now renders only CDL + OCP plus
+    # a Privacy Policy link. The header logo is untouched (see HEADER_LOGO above);
+    # this was footer-only.
     CDL_LOGO = (By.XPATH, "//img[@alt='CivicDataLab Logo']")
     OCP_LOGO = (By.XPATH, "//body//main//footer//div//div//img[@alt='OCP Logo']")
 
