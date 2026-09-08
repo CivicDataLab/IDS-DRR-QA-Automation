@@ -1,5 +1,5 @@
 from pages.base_page import BasePage
-from locators.common_locators import HeaderLocators, FooterLocators
+from locators.common_locators import HeaderLocators, FooterLocators, DisasterHubLocators
 
 
 class CommonPage(BasePage):
@@ -14,10 +14,23 @@ class CommonPage(BasePage):
         return self.click(HeaderLocators.HOME_LINK, "Home Link")
 
     def navigate_to_analytics(self):
-        """Navigate to Analytics page"""
+        """Navigate to Analytics page
+
+        On dev the Analytics nav link now lands on a disaster-type hub
+        (Flood/Heat cards) rather than the dashboard directly — confirmed live
+        2026-09-08, see DisasterHubLocators. prod skips straight to the
+        dashboard. Step through the hub transparently when it's there so every
+        analytics test can keep calling this one method regardless of which
+        environment it's pointed at.
+        """
         # Try primary locator first, fall back to alternative
         if not self.click(HeaderLocators.ANALYTICS_LINK, "Analytics Link"):
-            return self.click(HeaderLocators.ANALYTICS_LINK_ALT, "Analytics Link (Alt)")
+            if not self.click(HeaderLocators.ANALYTICS_LINK_ALT, "Analytics Link (Alt)"):
+                return False
+
+        if self.is_element_visible(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)", timeout=3):
+            return self.click(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)")
+
         return True
 
     def navigate_to_datasets(self):

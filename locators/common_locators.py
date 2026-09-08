@@ -21,6 +21,19 @@ class HeaderLocators:
     LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
 
 
+class DisasterHubLocators:
+    """Locators for the per-state disaster-type hub page (e.g. /en/<state>)
+
+    dev.dataspace's Analytics nav now lands here first: a page of disaster-type
+    cards (Flood, Heat, ...), each with an "Explore" link into that disaster's
+    actual analytics dashboard (Map/Chart/Table views, state sidebar). prod does
+    not have this hub yet and links straight to the dashboard — confirmed live
+    2026-09-08. Only Flood has real data at the moment, so navigate_to_analytics()
+    always takes the first Explore link.
+    """
+
+    EXPLORE_LINK = (By.XPATH, "(//a[normalize-space()='Explore'] | //button[normalize-space()='Explore'])[1]")
+
 
 class FooterLocators:
     """Locators for footer elements"""
