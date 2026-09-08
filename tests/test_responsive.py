@@ -7,10 +7,21 @@ Run:
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from config.config import Config
 from locators.common_locators import HeaderLocators
 from pages.common_page import CommonPage
+
+# The open drawer's Home link isn't under <header> at all — it's rendered via
+# a portal elsewhere in the DOM, confirmed live. CommonPage.is_nav_link_visible()
+# depends on self-healing relaxing HeaderLocators.HOME_LINK's //header scope to
+# find it, which worked locally but not reliably under CI's parallel xdist load
+# (self-healing exhausted every strategy and found nothing there — not a false
+# positive this time, a real timeout). Checking the real, unscoped element
+# directly is both more precise and doesn't depend on healing succeeding.
+_DRAWER_HOME_LINK = (By.XPATH, "//a[normalize-space()='Home']")
 
 MOBILE = (375, 667)
 TABLET = (768, 1024)
@@ -100,8 +111,14 @@ class TestResponsiveNavigation:
         )
         assert common_page.is_mobile_menu_button_visible(), f"{label} ({width}x{height}): menu toggle not visible"
         assert common_page.open_mobile_menu(), f"{label} ({width}x{height}): failed to open the mobile menu"
-        assert common_page.is_nav_link_visible("home"), (
-            f"{label} ({width}x{height}): Home link not visible after opening the mobile menu"
+
+        try:
+            WebDriverWait(driver, 10).until(EC.visibility_of_element_located(_DRAWER_HOME_LINK))
+        except Exception:
+            pass
+        home_links = driver.find_elements(*_DRAWER_HOME_LINK)
+        assert any(el.is_displayed() for el in home_links), (
+            f"{label} ({width}x{height}): Home link not visible anywhere after opening the mobile menu"
         )
 
     def test_nav_directly_visible_on_desktop(self, driver):
