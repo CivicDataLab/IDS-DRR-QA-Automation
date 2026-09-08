@@ -55,6 +55,14 @@ class CommonPage(BasePage):
         """Check if header logo is visible"""
         return self.is_element_visible(HeaderLocators.HEADER_LOGO, "Header Logo")
 
+    def is_mobile_menu_button_visible(self):
+        """Check if the mobile hamburger menu toggle is visible (narrow viewports only)"""
+        return self.is_element_visible(HeaderLocators.MOBILE_MENU_BUTTON, "Mobile Menu Button", timeout=3)
+
+    def open_mobile_menu(self):
+        """Click the mobile hamburger menu toggle to reveal nav links"""
+        return self.click(HeaderLocators.MOBILE_MENU_BUTTON, "Mobile Menu Button")
+
     def is_language_dropdown_visible(self):
         """Check if language dropdown is visible"""
         # Use shorter timeout since language dropdown may not be present on all pages
