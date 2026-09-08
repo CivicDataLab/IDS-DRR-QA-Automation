@@ -1248,3 +1248,121 @@ class TestAnalyticsCalendar:
         assert analytics_page.select_calendar_month("7"), "Failed to select month 7"
         assert not analytics_page.is_error_page_displayed(), \
             "Error page shown after selecting a calendar month"
+
+
+@pytest.mark.analytics
+@pytest.mark.flow
+class TestAnalyticsShareAndReport:
+    """Share menu and Download Report — previously zero test coverage.
+
+    Scoped to Assam only (not the full multistate matrix): these are UI
+    affordances on the dashboard chrome, not per-state data, so a second
+    state wouldn't add coverage.
+    """
+
+    def test_share_menu_opens_with_all_options(self, driver):
+        """Share button opens a dialog with Facebook/LinkedIn/Twitter/Copy Link"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state("Assam"), "Failed to select Assam"
+
+        assert analytics_page.open_share_menu(), "Failed to open Share menu"
+        for option in ("facebook", "linkedin", "twitter", "copy_link"):
+            assert analytics_page.is_share_option_visible(option), f"Share option '{option}' not visible"
+
+    def test_copy_link_shares_the_current_url(self, driver):
+        """Copy Link triggers the native 'copied to clipboard' confirmation without error"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state("Assam"), "Failed to select Assam"
+        assert analytics_page.open_share_menu(), "Failed to open Share menu"
+
+        assert analytics_page.click_copy_link(), "Failed to click Copy Link"
+
+    def test_download_report_prompts_confirmation(self, driver):
+        """Download Report opens the native confirm() dialog for the current state
+
+        Dismisses the dialog rather than accepting it — this proves the flow
+        triggers correctly without downloading a PDF on every test run.
+        """
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state("Assam"), "Failed to select Assam"
+
+        assert analytics_page.trigger_download_report(), "Failed to trigger Download Report"
+
+
+@pytest.mark.analytics
+@pytest.mark.flow
+class TestGovernmentResponseVariantSwap:
+    """Government-response indicators swap between an -fy-cumsum variant
+    (Map/Table) and a plain monthly variant (Chart) for the same visible
+    label — confirmed live 2026-09-09 (Map: total-tender-awarded-value-fy-cumsum,
+    Chart: total-tender-awarded-value). Previously zero coverage.
+    """
+
+    # Each view gets its own fresh navigation rather than toggling Map -> Chart
+    # within one session: toggling mid-session briefly resets the indicator
+    # param to a section-level default ('government-response') before a
+    # re-click lands — confirmed while building this test, an initially
+    # simpler toggle-and-recheck version flaked on exactly that transient
+    # state. Independent navigation per view is both more robust and closer
+    # to how a real user actually reaches each one (a shared link, not a
+    # mid-session toggle).
+
+    @staticmethod
+    def _wait_for_indicator_param(analytics_page, exclude_value, timeout=10):
+        """Wait for the URL's indicator param to settle past a transient value.
+
+        Expanding the Government Response section is itself a selection (it
+        sets indicator=government-response, a category-level value) before
+        the leaf click updates it again — confirmed live. Reading the param
+        immediately after select_govt_response_option() can race that second
+        pushState; wait for it to move past the category-level value instead
+        of trusting an immediate read.
+        """
+        WebDriverWait(analytics_page.driver, timeout).until(
+            lambda d: analytics_page.get_current_indicator_param() != exclude_value
+        )
+        return analytics_page.get_current_indicator_param()
+
+    def test_flood_tenders_indicator_is_cumsum_variant_on_map(self, driver):
+        """Flood Tenders indicator is the -fy-cumsum variant on Map view"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state("Assam"), "Failed to select Assam"
+        assert analytics_page.select_view(1), "Failed to select Map view"  # 1 = Map
+        assert analytics_page.expand_govt_response_options(), "Failed to expand Government Response"
+        assert analytics_page.select_govt_response_option("flood_tenders"), "Failed to select Flood Tenders"
+
+        indicator = self._wait_for_indicator_param(analytics_page, "government-response")
+        assert indicator and indicator.endswith("-fy-cumsum"), (
+            f"Expected Map view indicator to end in -fy-cumsum, got: {indicator!r}"
+        )
+
+    def test_flood_tenders_indicator_is_monthly_variant_on_chart(self, driver):
+        """Flood Tenders indicator is the plain monthly variant on Chart view"""
+        common_page = CommonPage(driver)
+        analytics_page = AnalyticsPage(driver)
+
+        assert common_page.navigate_to_analytics(), "Failed to navigate to Analytics"
+        assert analytics_page.select_state("Assam"), "Failed to select Assam"
+        assert analytics_page.select_view(2), "Failed to select Chart view"  # 2 = Chart
+        assert analytics_page.expand_govt_response_options(), "Failed to expand Government Response"
+        assert analytics_page.select_govt_response_option("flood_tenders"), "Failed to select Flood Tenders"
+
+        indicator = self._wait_for_indicator_param(analytics_page, "government-response")
+        assert indicator and not indicator.endswith("-fy-cumsum"), (
+            f"Expected Chart view indicator to be the plain monthly variant, got: {indicator!r}"
+        )
+        assert indicator == "total-tender-awarded-value", (
+            f"Expected the confirmed-live monthly variant name, got: {indicator!r}"
+        )

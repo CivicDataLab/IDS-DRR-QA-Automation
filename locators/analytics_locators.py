@@ -85,10 +85,27 @@ class GovtResponseLocators:
     EXPAND_COLLAPSE = (By.CSS_SELECTOR, "aside [aria-label='Government Response']")
     COLLAPSE_BUTTON = (By.CSS_SELECTOR, "aside [aria-label='Government Response']")
 
-    # Indicators
-    FLOOD_TENDERS = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders']")
-    SDRF = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders Under SDRF']")
-    REPAIRS_RESTORATION = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders for Repairs and Restoration']")
-    IMMEDIATE_MEASURES = (By.CSS_SELECTOR, "aside [aria-label='Total Value of Flood Tenders for Immediate Measures']")
-    OTHERS = (By.CSS_SELECTOR, "aside [aria-label='Total value of flood tenders related to Others']")
-    FUNDS_ALLOCATED_SDRF_SEC = (By.CSS_SELECTOR, "aside [aria-label='Total value of funds allocated through SDRF during SEC meetings']")
+    # Indicators — aria-label wording confirmed live 2026-09-09 (was stale: the
+    # previous values, e.g. "Total Value of Flood Tenders", matched zero
+    # elements). Not caught earlier because select_govt_response_option() was
+    # never actually called by any test — dead, unexercised code.
+    FLOOD_TENDERS = (By.CSS_SELECTOR, "aside [aria-label='Flood Tenders : Total Value']")
+    SDRF = (By.CSS_SELECTOR, "aside [aria-label='Flood Tenders Under SDRF : Total value']")
+    REPAIRS_RESTORATION = (By.CSS_SELECTOR, "aside [aria-label='Repairs and Restoration Flood Tenders : Total Value']")
+    IMMEDIATE_MEASURES = (By.CSS_SELECTOR, "aside [aria-label='Immediate Measure Flood Tenders : Total Value']")
+    OTHERS = (By.CSS_SELECTOR, "aside [aria-label='Other Flood Tenders : Total value of Non restoration and Preparedness tenders']")
+    FUNDS_ALLOCATED_SDRF_SEC = (By.CSS_SELECTOR, "aside [aria-label='State Disaster Relief Funds Allocated District-wise During SEC meetings : Total Value']")
+
+
+class ShareAndReportLocators:
+    """Locators for the Share menu and Download Report action on the analytics dashboard"""
+
+    SHARE_BUTTON = (By.XPATH, "//button[normalize-space()='Share']")
+    DOWNLOAD_REPORT_BUTTON = (By.XPATH, "//button[normalize-space()='Download Report']")
+
+    # Opens as a role=dialog popover — confirmed live 2026-09-09
+    SHARE_DIALOG = (By.XPATH, "//*[@role='dialog']")
+    SHARE_FACEBOOK = (By.XPATH, "//*[@role='dialog']//button[normalize-space()='Facebook']")
+    SHARE_LINKEDIN = (By.XPATH, "//*[@role='dialog']//button[normalize-space()='LinkedIn']")
+    SHARE_TWITTER = (By.XPATH, "//*[@role='dialog']//button[normalize-space()='Twitter']")
+    SHARE_COPY_LINK = (By.XPATH, "//*[@role='dialog']//button[normalize-space()='Copy Link']")

@@ -4,7 +4,8 @@ from locators.analytics_locators import (
     HazardLocators,
     ExposureLocators,
     VulnerabilityLocators,
-    GovtResponseLocators
+    GovtResponseLocators,
+    ShareAndReportLocators
 )
 from config.config import Config
 
@@ -1101,3 +1102,52 @@ class AnalyticsPage(BasePage):
         """Select a specific month in the open calendar (month_value as string e.g. '7')"""
         locator = AnalyticsPageLocators.get_calendar_month(month_value)
         return self.click(locator, f"Calendar month {month_value}")
+
+    def get_current_indicator_param(self):
+        """Read the `indicator` query param from the current URL (e.g. a
+        government-response leaf swaps between an -fy-cumsum suffixed variant
+        on Map/Table and a plain monthly variant on Chart)."""
+        from urllib.parse import urlparse, parse_qs
+
+        query = parse_qs(urlparse(self.driver.current_url).query)
+        values = query.get("indicator")
+        return values[0] if values else None
+
+    def open_share_menu(self):
+        """Click Share to open the share dialog (Facebook/LinkedIn/Twitter/Copy Link)"""
+        return self.click(ShareAndReportLocators.SHARE_BUTTON, "Share button")
+
+    def is_share_option_visible(self, option):
+        """Check a share option is visible in the open share dialog
+
+        Args:
+            option: 'facebook', 'linkedin', 'twitter', or 'copy_link'
+        """
+        locators = {
+            "facebook": ShareAndReportLocators.SHARE_FACEBOOK,
+            "linkedin": ShareAndReportLocators.SHARE_LINKEDIN,
+            "twitter": ShareAndReportLocators.SHARE_TWITTER,
+            "copy_link": ShareAndReportLocators.SHARE_COPY_LINK,
+        }
+        if option not in locators:
+            print(f"❌ Unknown share option: {option}")
+            return False
+        return self.is_element_visible(locators[option], f"Share option ({option})", timeout=5)
+
+    def click_copy_link(self):
+        """Click Copy Link in the open share dialog, then dismiss the resulting
+        native 'URL copied to clipboard!' alert — confirmed live 2026-09-09."""
+        clicked = self.click(ShareAndReportLocators.SHARE_COPY_LINK, "Copy Link")
+        if clicked:
+            self.dismiss_alert()
+        return clicked
+
+    def trigger_download_report(self):
+        """Click Download Report, then dismiss the native confirm() dialog it
+        opens (confirmed live: 'Do you want to download the report for
+        "<State>"?') rather than accepting it — this proves the flow triggers
+        correctly without actually downloading a PDF in every test run."""
+        clicked = self.click(ShareAndReportLocators.DOWNLOAD_REPORT_BUTTON, "Download Report")
+        if clicked:
+            self.dismiss_alert()
+        return clicked
