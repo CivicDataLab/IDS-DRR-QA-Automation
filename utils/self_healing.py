@@ -121,12 +121,23 @@ class SelfHealingLocator:
             except TimeoutException:
                 pass
 
+        # A degraded fallback (bare //div, //a, //button...) matches dozens of
+        # elements on a real page. Without checking that the one found actually
+        # resembles the original target, strategies 3-5 below would "heal"
+        # anything to whatever happens to be first in DOM order — and then cache
+        # that as a permanent, silently-wrong substitute. Pull whatever
+        # distinguishing text the original locator was built from (alt/aria-label/
+        # title/visible text) and require a healed candidate to still carry it.
+        signature = self._extract_signature(locator[1])
+
         # Strategy 3: Try relaxed XPath (if original is XPath)
         if locator[0] == By.XPATH:
             relaxed_locators = self._generate_relaxed_xpaths(locator[1])
             for relaxed_locator in relaxed_locators:
                 try:
                     element = wait.until(EC.presence_of_element_located((By.XPATH, relaxed_locator)))
+                    if not self._is_relevant_match(element, signature):
+                        continue
                     logger.info(f"🔧 Found {element_name} using relaxed XPath")
                     self._log_healing(element_name, "relaxed_xpath", locator, (By.XPATH, relaxed_locator))
                     self._save_learned_locator(locator, [By.XPATH, relaxed_locator], element.text[:50])
@@ -140,6 +151,8 @@ class SelfHealingLocator:
             for css_alt in css_alternatives:
                 try:
                     element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_alt)))
+                    if not self._is_relevant_match(element, signature):
+                        continue
                     logger.info(f"🔧 Found {element_name} using CSS alternative")
                     self._log_healing(element_name, "css_alternative", locator, (By.CSS_SELECTOR, css_alt))
                     self._save_learned_locator(locator, [By.CSS_SELECTOR, css_alt], element.text[:50])
@@ -152,6 +165,8 @@ class SelfHealingLocator:
         for tag_locator in tag_locators:
             try:
                 element = wait.until(EC.presence_of_element_located(tag_locator))
+                if not self._is_relevant_match(element, signature):
+                    continue
                 logger.info(f"🔧 Found {element_name} using tag-based locator")
                 self._log_healing(element_name, "tag_based", locator, tag_locator)
                 self._save_learned_locator(locator, list(tag_locator), element.text[:50])
@@ -161,6 +176,48 @@ class SelfHealingLocator:
 
         logger.error(f"❌ All healing strategies failed for {element_name}")
         return None
+
+    def _extract_signature(self, selector):
+        """Best-effort distinguishing text from a locator string, e.g.
+
+            //img[@alt='Rockefeller Logo']        -> 'rockefeller logo'
+            //button[normalize-space()='Map View'] -> 'map view'
+
+        Returns None when nothing distinguishing is present (a bare tag or class
+        selector) — in that case there's nothing to verify a healed match against,
+        so _is_relevant_match lets it through unchanged (the original, weaker
+        behavior for locators that never had a target-specific signature).
+        """
+        import re
+        for pattern in (
+            r"@alt=['\"]([^'\"]+)['\"]",
+            r"@aria-label=['\"]([^'\"]+)['\"]",
+            r"@title=['\"]([^'\"]+)['\"]",
+            r"normalize-space\(\)=['\"]([^'\"]+)['\"]",
+            r"text\(\)=['\"]([^'\"]+)['\"]",
+        ):
+            match = re.search(pattern, selector)
+            if match:
+                return match.group(1).strip().lower()
+        return None
+
+    def _is_relevant_match(self, element, signature):
+        """Reject a healed candidate that doesn't carry the original locator's
+        distinguishing text — the guard that stops "heal //img[@alt=\'Rockefeller
+        Logo\'] to the first <a> tag on the page" from ever being accepted again.
+        """
+        if not signature:
+            return True
+        try:
+            haystack = " ".join(filter(None, [
+                element.text,
+                element.get_attribute("alt"),
+                element.get_attribute("aria-label"),
+                element.get_attribute("title"),
+            ])).lower()
+        except Exception:
+            return False
+        return signature in haystack
 
     def _generate_relaxed_xpaths(self, xpath):
         """
@@ -172,14 +229,18 @@ class SelfHealingLocator:
         """
         relaxed = []
 
-        # Extract tag name
-        if '/' in xpath:
-            parts = xpath.split('/')
-            # Get last meaningful tag
-            for part in reversed(parts):
-                if part and '[' not in part and '@' not in part:
-                    relaxed.append(f"//{part}")
-                    break
+        # Relax to the target element's own tag — bare, no predicate. This must
+        # come from the LAST path segment specifically: walking backward past it
+        # looking for "a segment with no [ or @" (the old approach) skips straight
+        # over any bracketed predicate and lands on an unrelated ancestor instead
+        # — //body//main//footer//div//img[@alt='IDS-DRR Logo'] used to relax to
+        # //div (the img's grandparent) rather than //img, and //div matches
+        # dozens of elements on a real page.
+        last_segment = next((p for p in reversed(xpath.split('/')) if p), None)
+        if last_segment:
+            tag = last_segment.split('[')[0].strip()
+            if tag and tag != '*':
+                relaxed.append(f"//{tag}")
 
         # Convert exact attribute matches to contains
         if '@' in xpath and '=' in xpath:
@@ -234,32 +295,54 @@ class SelfHealingLocator:
         return alternatives
 
     def _generate_tag_based_locators(self, original_locator):
-        """Generate locators based on common tag patterns"""
-        locators = []
+        """Generate locators based on the target element's actual tag.
 
-        # Common button patterns
-        if 'button' in str(original_locator[1]).lower():
+        Previously this checked `'a' in locator_string.lower()` — a bare
+        substring test. Since almost every attribute-based XPath contains the
+        letter "a" somewhere (@alt, @class, @aria-label, "Map"...), that matched
+        nearly any locator and offered (By.TAG_NAME, 'a') — the first <a> tag
+        anywhere on the page — as a fallback for things that were never links.
+        Use the actual target tag extracted from the locator instead.
+        """
+        locators = []
+        tag = self._extract_tag(original_locator)
+
+        if tag == 'button':
             locators.extend([
                 (By.TAG_NAME, 'button'),
                 (By.CSS_SELECTOR, 'button[type="button"]'),
                 (By.CSS_SELECTOR, 'button[type="submit"]'),
             ])
-
-        # Common input patterns
-        if 'input' in str(original_locator[1]).lower():
+        elif tag == 'input':
             locators.extend([
                 (By.TAG_NAME, 'input'),
                 (By.CSS_SELECTOR, 'input[type="text"]'),
             ])
-
-        # Common link patterns
-        if 'a' in str(original_locator[1]).lower() or 'link' in str(original_locator[1]).lower():
+        elif tag == 'a':
             locators.extend([
                 (By.TAG_NAME, 'a'),
                 (By.CSS_SELECTOR, 'a[href]'),
             ])
 
         return locators
+
+    def _extract_tag(self, locator):
+        """Best-effort extraction of the target tag name from a locator."""
+        by, selector = locator
+        if by == By.XPATH:
+            last_segment = next((p for p in reversed(selector.split('/')) if p), None)
+            if last_segment:
+                tag = last_segment.split('[')[0].strip()
+                return tag if tag and tag != '*' else None
+        elif by == By.CSS_SELECTOR:
+            import re
+            last_part = selector.split()[-1] if selector.split() else selector
+            match = re.match(r'^([a-zA-Z][a-zA-Z0-9]*)', last_part)
+            if match:
+                return match.group(1)
+        elif by == By.TAG_NAME:
+            return selector
+        return None
 
     def _log_healing(self, element_name, strategy, original_locator, successful_locator):
         """Log healing attempt for reporting"""
