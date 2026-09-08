@@ -69,7 +69,15 @@ class TestHomePageNavigation:
         assert common_page.is_header_logo_visible(), "Header missing on About Us page"
 
     def test_click_state_link_navigates_to_analytics(self, driver):
-        """Clicking a state quick-link navigates to that state's analytics page"""
+        """Clicking a state quick-link eventually reaches that state's analytics page
+
+        On dev the link lands on a disaster-type hub (Flood/Heat cards) first,
+        not the dashboard directly — confirmed live 2026-09-08, see
+        DisasterHubLocators. Step through it the same way
+        CommonPage.navigate_to_analytics() does, so this test reflects the same
+        real user journey on both dev and prod.
+        """
+        from locators.common_locators import DisasterHubLocators
         home_page = HomePage(driver)
         initial_url = driver.current_url
 
@@ -83,8 +91,13 @@ class TestHomePageNavigation:
             WebDriverWait(driver, 10).until(lambda d: d.current_url != initial_url)
         except Exception:
             pass
-
         assert driver.current_url != initial_url, "URL did not change after clicking state link"
+
+        if home_page.is_element_visible(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)", timeout=5):
+            assert home_page.click(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)"), \
+                "Failed to click through the disaster-type hub"
+
+        WebDriverWait(driver, 10).until(lambda d: "analytics" in d.current_url.lower())
         assert "analytics" in driver.current_url.lower(), \
             f"Expected analytics URL, got: {driver.current_url}"
 

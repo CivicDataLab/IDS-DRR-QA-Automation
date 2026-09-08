@@ -27,10 +27,15 @@ class TestDatasetNavigation:
         assert common_page.is_header_logo_visible(), "Header logo not visible"
 
     def test_dataset_page_footer_visible(self, driver):
-        """Verify footer is visible on dataset page"""
+        """Verify footer is visible on dataset page
+
+        The dataset page footer is the site-wide footer (CDL + OCP only) — the
+        partner logos checked by check_all_footer_elements() are Home-only, see
+        CommonPage.check_global_footer_elements().
+        """
         common_page = CommonPage(driver)
         assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
-        footer_results = common_page.check_all_footer_elements()
+        footer_results = common_page.check_global_footer_elements()
         assert all(footer_results.values()), "Some footer elements not visible"
 
 

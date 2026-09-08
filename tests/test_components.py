@@ -49,7 +49,7 @@ class TestHeaderComponents:
 class TestFooterComponents:
     """Tests for footer components"""
 
-    @pytest.mark.parametrize("logo", ["ids_drr", "cdl", "ocp"])
+    @pytest.mark.parametrize("logo", ["cdl", "ocp"])
     def test_footer_logos_visible(self, driver, logo):
         """Test main footer logos are visible"""
         common_page = CommonPage(driver)
@@ -110,14 +110,23 @@ class TestComponentsOnAllPages:
         ("about_us", "navigate_to_about_us")
     ])
     def test_footer_on_all_pages(self, driver, page_name, navigation_method):
-        """Test footer components on all pages"""
+        """Test footer components on all pages
+
+        Only Home has the partner-logo "Supported by" section; every other page
+        has the plain site-wide footer (CDL + OCP only) — confirmed live
+        2026-09-08. Checking for partner logos on the other pages was passing
+        only via self-healing degrading to the first <a> tag on the page.
+        """
         common_page = CommonPage(driver)
 
         # Navigate to page if needed
         if navigation_method:
             getattr(common_page, navigation_method)()
 
-        footer_results = common_page.check_all_footer_elements()
+        if page_name == "homepage":
+            footer_results = common_page.check_all_footer_elements()
+        else:
+            footer_results = common_page.check_global_footer_elements()
         assert all(footer_results.values()), f"Footer missing on {page_name}: {footer_results}"
 
 
@@ -289,9 +298,10 @@ class TestComponentPersistence:
         assert analytics_page.select_view(1), "Failed to select view"
         assert analytics_page.select_district("Sivasagar"), "Failed to select district"
 
-        # Check components still visible
+        # Check components still visible. Analytics page footer is the
+        # site-wide footer (CDL + OCP only) — partner logos are Home-only.
         assert common_page.is_header_logo_visible(), "Header missing during analytics flow"
-        footer_results = common_page.check_all_footer_elements()
+        footer_results = common_page.check_analytics_footer_elements()
         assert all(footer_results.values()), "Footer missing during analytics flow"
 
     def test_components_during_dataset_flow(self, driver):
@@ -303,9 +313,11 @@ class TestComponentPersistence:
         assert common_page.navigate_to_datasets(), "Failed to navigate to datasets"
         assert dataset_page.apply_source_filter_drims(), "Failed to apply DRIMS filter"
 
-        # Check components still visible
+        # Check components still visible. Dataset page footer is the site-wide
+        # footer (CDL + OCP only) — partner logos are Home-only, see
+        # CommonPage.check_global_footer_elements().
         assert common_page.is_header_logo_visible(), "Header missing during dataset flow"
-        assert all(common_page.check_all_footer_elements().values()), "Footer missing during dataset flow"
+        assert all(common_page.check_global_footer_elements().values()), "Footer missing during dataset flow"
 
 
 @pytest.mark.component
