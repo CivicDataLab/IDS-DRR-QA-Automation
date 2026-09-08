@@ -5,8 +5,6 @@ Run:
     pytest tests/test_security.py -v
 """
 
-import re
-
 import pytest
 import requests
 
