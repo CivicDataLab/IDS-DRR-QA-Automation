@@ -1,0 +1,64 @@
+name: DataSpace Availability
+
+# The datasets IDS-DRR renders come from CivicDataSpace. When a DataSpace host dies
+# the IDS-DRR UI keeps rendering and the regression suite stays green, so outages
+# have twice gone unnoticed for weeks. These are plain HTTP probes — no browser, no
+# Playwright — so they can run often and cheaply.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+# Deliberately its own group: this must never queue behind, or run alongside, the
+# 4-shard regression suite.
+concurrency:
+  group: availability
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    name: Probe DataSpace hosts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Not ./.github/actions/setup-test-env — that installs the full browser stack
+      # for what is four HTTP requests.
+      - name: Install probe dependencies
+        run: pip install --quiet requests python-dotenv pytest pytest-html pytest-metadata
+
+      - name: Probe
+        id: probe
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pytest tests/test_dataspace_availability.py -p no:cacheprovider 2>&1 | tee probe.log
+
+      - name: File or update incident
+        if: steps.probe.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PARENT_ISSUE: "20"
+          PROBE_LOG: probe.log
+        run: ./scripts/availability_alert.sh fail
+
+      - name: Close incident if recovered
+        if: steps.probe.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PARENT_ISSUE: "20"
+        run: ./scripts/availability_alert.sh pass
+
+      - name: Fail the run if probes failed
+        if: steps.probe.outcome == 'failure'
+        run: exit 1

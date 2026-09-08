@@ -34,6 +34,16 @@ class Config:
         'DATASPACE_PROD_URL', 'https://dataspace.open-contracting.in'
     )
 
+    # The DataSpace GraphQL APIs. These fail independently of the web UIs above —
+    # on 2026-09-03 the API container and the frontend process went down for two
+    # different reasons, so probing only the UI can miss a dead API entirely.
+    DATASPACE_DEV_API_URL = os.getenv(
+        'DATASPACE_DEV_API_URL', 'https://api.dev.dataspace.open-contracting.in/api/graphql'
+    )
+    DATASPACE_PROD_API_URL = os.getenv(
+        'DATASPACE_PROD_API_URL', 'https://api.dataspace.open-contracting.in/api/graphql'
+    )
+
     # Timeout (seconds) for plain HTTP availability probes
     HTTP_TIMEOUT = int(os.getenv('HTTP_TIMEOUT', '20'))
 
