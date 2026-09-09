@@ -161,6 +161,21 @@ class AnalyticsPage(BasePage):
             self._capture_failure_screenshot(f"state_content_missing_{slug}")
             return False
 
+        # /en/<slug> is a disaster-type hub on dev, not the dashboard - header and
+        # footer are there, but no chart, sidebar or calendar. Step through it the
+        # same way CommonPage.navigate_to_analytics() does. prod links straight to
+        # the dashboard and has no Explore link, so this is a no-op there.
+        from locators.common_locators import DisasterHubLocators
+
+        if self.is_element_visible(
+            DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)", timeout=5
+        ):
+            if not self.click(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)"):
+                print(f"Could not step through the disaster hub for {slug}")
+                self._capture_failure_screenshot(f"state_hub_stuck_{slug}")
+                return False
+            self._wait_for_page_load_complete()
+
         return True
 
     def _capture_failure_screenshot(self, filename):
