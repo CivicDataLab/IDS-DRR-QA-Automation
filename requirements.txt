@@ -21,3 +21,6 @@ requests>=2.31.0
 
 # Multi-state testing framework
 pyyaml>=6.0.0
+
+# Accessibility testing (axe-core)
+axe-selenium-python>=2.1.6

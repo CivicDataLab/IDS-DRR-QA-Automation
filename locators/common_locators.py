@@ -20,6 +20,11 @@ class HeaderLocators:
     # Language dropdown
     LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
 
+    # Mobile hamburger toggle — nav links (Home/Analytics/...) aren't in the DOM
+    # as visible elements below the tablet breakpoint until this is clicked;
+    # confirmed live 2026-09-09 at 375x667.
+    MOBILE_MENU_BUTTON = (By.XPATH, "//header//button[normalize-space()='Menu']")
+
 
 class DisasterHubLocators:
     """Locators for the per-state disaster-type hub page (e.g. /en/<state>)
