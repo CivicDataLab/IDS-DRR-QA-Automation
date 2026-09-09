@@ -1,0 +1,98 @@
+name: Refresh test durations
+
+# pytest-split balances shards from .test_durations. Tests missing from that file
+# are assigned the *average* of the ones present, so a stale file does not degrade
+# gracefully - it silently misallocates. On 2026-09-09 the file was three months
+# old and covered 204 of 362 tests: the balancer predicted 93/93/93/91 minutes
+# while the shards actually took 106/92/31/6, with shard 4 entirely guesswork.
+#
+# Run this after a green full regression, then merge the PR it opens.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Environment to time against; use the one CI usually runs."
+        type: choice
+        options: [dev, prod, staging]
+        default: dev
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  measure:
+    name: Full regression (timed)
+    uses: ./.github/workflows/_test.yml
+    with:
+      markers: ""
+      shards: "[1,2,3,4,5,6,7,8]"
+      workers: 2
+      target_env: ${{ inputs.target_env }}
+      bootstrap_states: true
+      store_durations: true
+    secrets: inherit
+
+  commit:
+    name: Merge durations and open PR
+    needs: measure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: ./.github/actions/setup-test-env
+
+      - name: Download duration fragments
+        uses: actions/download-artifact@v4
+        with:
+          pattern: durations-shard-*
+          path: fragments
+          merge-multiple: false
+
+      - name: List currently collected tests
+        shell: bash
+        run: |
+          # -o addopts="" strips pytest.ini's -v, which would break the id list.
+          pytest tests/ --collect-only -q -p no:cacheprovider -o addopts="" \
+            | grep -E '^tests/.*::' > collected.txt
+          wc -l < collected.txt
+
+      - name: Merge fragments
+        shell: bash
+        run: |
+          python3 scripts/merge_durations.py \
+            fragments/*/.test_durations_shard_* \
+            --collected collected.txt \
+            --out .test_durations
+
+      - name: Open PR if the file changed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- .test_durations; then
+            echo "No change to .test_durations."
+            exit 0
+          fi
+          branch="chore-refresh-durations-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add .test_durations
+          git commit -m "chore: refresh .test_durations from run ${GITHUB_RUN_ID}"
+          git push -u origin "$branch"
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            echo "Timings recorded by [run ${GITHUB_RUN_ID}](${run_url}) against \`${{ inputs.target_env }}\`."
+            echo
+            echo "Merge only if that run was green — timings from a red run bake failure"
+            echo "and rerun time into the baseline."
+          } > pr-body.md
+          gh pr create --base "${GITHUB_REF_NAME}" --head "$branch" \
+            --title "chore: refresh .test_durations" \
+            --body-file pr-body.md
