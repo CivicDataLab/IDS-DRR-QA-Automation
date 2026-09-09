@@ -37,12 +37,17 @@ jobs:
       - name: Install probe dependencies
         run: pip install --quiet requests python-dotenv pytest pytest-html pytest-metadata
 
+      # --confcutdir=tests keeps the root conftest.py out of collection. That conftest
+      # imports DriverFactory -> selenium at module level, which this lean install
+      # deliberately omits, so without the flag pytest dies at collection (exit 4)
+      # before a single host is contacted.
       - name: Probe
         id: probe
         continue-on-error: true
         run: |
           set -o pipefail
-          pytest tests/test_dataspace_availability.py -p no:cacheprovider 2>&1 | tee probe.log
+          pytest tests/test_dataspace_availability.py -p no:cacheprovider \
+            --confcutdir=tests 2>&1 | tee probe.log
 
       - name: File or update incident
         if: steps.probe.outcome == 'failure'
