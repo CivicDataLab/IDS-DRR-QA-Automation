@@ -51,8 +51,11 @@ jobs:
         run: |
           set -o pipefail
           rc=0
+          # --color=no: availability_alert.sh greps probe.log for '^FAILED' / '^E '.
+          # Runners happen to produce plain output today, but a TTY-detecting pytest
+          # would prefix ANSI codes and silently empty every incident excerpt.
           pytest tests/test_dataspace_availability.py -p no:cacheprovider \
-            --confcutdir=tests 2>&1 | tee probe.log || rc=$?
+            --confcutdir=tests --color=no 2>&1 | tee probe.log || rc=$?
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           case "$rc" in
             0) echo "verdict=healthy" >> "$GITHUB_OUTPUT" ;;
