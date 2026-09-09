@@ -28,21 +28,12 @@ TABLET = (768, 1024)
 DESKTOP = (1920, 1080)
 BREAKPOINTS = [("mobile", *MOBILE), ("tablet", *TABLET), ("desktop", *DESKTOP)]
 
-# dev's Analytics nav lands on a per-state disaster-type hub (Flood/Heat cards)
-# before the actual dashboard — see DisasterHubLocators in
-# fix-footer-analytics-hub-locators (not yet merged as of this branch).
-# Duplicated inline here rather than importing it, since that locator doesn't
-# exist on this branch yet; once that PR merges this can import it instead.
-_EXPLORE_LINK = (By.XPATH, "(//a[normalize-space()='Explore'] | //button[normalize-space()='Explore'])[1]")
-
 
 def _goto_analytics_dashboard(driver):
-    """Navigate to the Assam analytics dashboard, stepping through the
-    disaster-type hub if the viewport/environment shows one."""
-    driver.get(f"{Config.BASE_URL.rstrip('/')}/assam/analytics?indicator=risk-score&view=map")
-    common_page = CommonPage(driver)
-    if common_page.is_element_visible(_EXPLORE_LINK, "Explore (disaster hub)", timeout=3):
-        common_page.click(_EXPLORE_LINK, "Explore (disaster hub)")
+    """Navigate to the Assam analytics dashboard via the header nav, same path
+    a real user takes — CommonPage.navigate_to_analytics() already steps
+    through the disaster-type hub when dev shows one (see DisasterHubLocators)."""
+    CommonPage(driver).navigate_to_analytics()
 
 
 def _has_horizontal_overflow(driver):
