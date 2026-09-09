@@ -234,6 +234,18 @@ jobs:
           files: reports/junit_shard_*.xml
           check_name: Test Results (${{ inputs.markers || 'all' }})
 
+      # The published check is built from the JUnit XML that arrived. A shard that
+      # is cancelled, times out, or dies before pytest writes its XML contributes
+      # no file - so the check reports green on the surviving shards alone. Seen on
+      # run 34343989609: shards 1 and 2 cancelled, "Test Results (all)" still
+      # passed. Gate on the matrix result, which cannot go missing.
+      - name: Fail if any shard did not succeed
+        if: needs.test.result != 'success'
+        run: |
+          echo "::error::Shard matrix result was '${{ needs.test.result }}', not 'success'."
+          echo "::error::Refusing to report a green summary - check the individual shards."
+          exit 1
+
       - name: Comment on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
