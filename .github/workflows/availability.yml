@@ -37,15 +37,42 @@ jobs:
       - name: Install probe dependencies
         run: pip install --quiet requests python-dotenv pytest pytest-html pytest-metadata
 
+      # --confcutdir=tests keeps the root conftest.py out of collection. That conftest
+      # imports DriverFactory -> selenium at module level, which this lean install
+      # deliberately omits, so without the flag pytest dies at collection (exit 4)
+      # before a single host is contacted.
+      #
+      # The exit code is load-bearing: only 1 (tests ran and failed) means the hosts
+      # are unhealthy. 2/3/4/5 mean the probe itself could not run, which must never
+      # be reported as an outage — a monitor that cries wolf when it is broken is
+      # worse than no monitor.
       - name: Probe
         id: probe
-        continue-on-error: true
         run: |
           set -o pipefail
-          pytest tests/test_dataspace_availability.py -p no:cacheprovider 2>&1 | tee probe.log
+          rc=0
+          # --color=no: availability_alert.sh greps probe.log for '^FAILED' / '^E '.
+          # Runners happen to produce plain output today, but a TTY-detecting pytest
+          # would prefix ANSI codes and silently empty every incident excerpt.
+          pytest tests/test_dataspace_availability.py -p no:cacheprovider \
+            --confcutdir=tests --color=no 2>&1 | tee probe.log || rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          case "$rc" in
+            0) echo "verdict=healthy" >> "$GITHUB_OUTPUT" ;;
+            1) echo "verdict=outage"  >> "$GITHUB_OUTPUT" ;;
+            *) echo "verdict=broken"  >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Probe is broken (not an outage)
+        if: steps.probe.outputs.verdict == 'broken'
+        run: |
+          echo "::error::Availability probe could not run (pytest exit ${{ steps.probe.outputs.rc }})."
+          echo "::error::This is a fault in the probe, not the DataSpace hosts. No incident filed."
+          tail -30 probe.log || true
+          exit 1
 
       - name: File or update incident
-        if: steps.probe.outcome == 'failure'
+        if: steps.probe.outputs.verdict == 'outage'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PARENT_ISSUE: "20"
@@ -53,12 +80,12 @@ jobs:
         run: ./scripts/availability_alert.sh fail
 
       - name: Close incident if recovered
-        if: steps.probe.outcome == 'success'
+        if: steps.probe.outputs.verdict == 'healthy'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PARENT_ISSUE: "20"
         run: ./scripts/availability_alert.sh pass
 
       - name: Fail the run if probes failed
-        if: steps.probe.outcome == 'failure'
+        if: steps.probe.outputs.verdict == 'outage'
         run: exit 1
