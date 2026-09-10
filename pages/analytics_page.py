@@ -79,118 +79,111 @@ class AnalyticsPage(BasePage):
             print(f"⚠️  Warning during load wait: {e}")
             return True  # Don't fail the test if we can't detect loading
 
+    # One path that resolves on both environments, verified live 2026-09-10:
+    #   dev  - 307s to /en/<slug>, the disaster hub, then Explore -> /flood/analytics
+    #   prod - is the dashboard already; /en/<slug> and /en/<slug>/flood/analytics
+    #          both 404 there, so neither can be hardcoded.
+    STATE_ROUTE_TEMPLATE = "{base}/en/{slug}/analytics"
+
+    @staticmethod
+    def state_slug(state_name):
+        """Route slug for a state name: 'Himachal pradesh' -> 'himachal-pradesh'."""
+        return "-".join(state_name.strip().lower().split())
+
     def select_state(self, state_name):
         """
-        Select a state from the sidebar - handles both dropdown and list item approaches
+        Switch to a state's analytics.
+
+        State is a route, not an in-page control. Verified live on dev
+        2026-09-09: the analytics page renders no <select> at all, and the four
+        states other than the current one have zero nodes in the DOM - so there
+        is nothing on the page to pick from. Each state is reachable only at
+        /en/<slug>, linked from the home page.
+
+        The previous implementation looked for a <select name="State"> and then
+        fell back to sidebar <li> items. Neither has existed for some time: in
+        run 34224508627 the <select> was missing on all 1431 attempts, and the
+        <li> fallback then timed out for every state except the one already
+        loaded, producing ~146 identical failures.
 
         Args:
-            state_name: Name of the state to select (e.g., "Assam", "Himachal pradesh")
+            state_name: Display name of the state (e.g. "Himachal pradesh")
 
         Returns:
             bool: Success status
         """
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait, Select
-        from selenium.webdriver.support import expected_conditions as EC
-        from selenium.common.exceptions import (
-            NoSuchElementException,
-            StaleElementReferenceException,
-            ElementNotInteractableException,
-            TimeoutException
+        slug = self.state_slug(state_name)
+        target = self.STATE_ROUTE_TEMPLATE.format(
+            base=Config.BASE_URL.rstrip("/"), slug=slug
         )
-        import time
 
-        # First, wait for any existing page loads to complete
+        # Already there: don't pay for a reload, and don't disturb page state.
+        # The path differs per environment, so match on the slug segment.
+        current = self.driver.current_url.split("?")[0].rstrip("/")
+        if f"/en/{slug}/" in current + "/":
+            self._wait_for_page_load_complete()
+            return True
+
+        try:
+            self.driver.get(target)
+        except Exception as e:
+            print(f"Failed to open {target}: {type(e).__name__}: {e}")
+            self._capture_failure_screenshot(f"state_navigation_error_{slug}")
+            return False
+
         self._wait_for_page_load_complete()
 
-        max_retries = 3
+        # A 200 that renders the error boundary is still a failed selection.
+        if self.is_error_page_displayed():
+            print(f"Error page rendered for state route {target}")
+            self._capture_failure_screenshot(f"state_error_page_{slug}")
+            return False
 
-        for attempt in range(max_retries):
-            try:
-                wait = WebDriverWait(self.driver, 15)
+        # dev redirects /en/<slug>/analytics -> /en/<slug>; prod stays put. Assert
+        # on the slug segment rather than a full path either env might not use.
+        landed = self.driver.current_url.split("?")[0].rstrip("/")
+        if f"/en/{slug}/" not in landed + "/":
+            print(f"Expected a /en/{slug} route, got: {landed}")
+            self._capture_failure_screenshot(f"state_wrong_route_{slug}")
+            return False
 
-                # APPROACH 1: Try to find <select> dropdown with name="State"
-                try:
-                    select_element = wait.until(
-                        EC.presence_of_element_located((By.NAME, "State"))
-                    )
-                    select = Select(select_element)
-                    available_options = [opt.text.strip() for opt in select.options]
-                    print(f"📋 Found <select> dropdown with states: {', '.join(available_options[:5])}...")
+        # The URL alone proves nothing here - we navigated to it, so of course it
+        # matches. An unknown state still answers HTTP 200 and renders the 404
+        # view, so assert on what the page actually shows.
+        from selenium.webdriver.common.by import By
+        try:
+            body = self.driver.find_element(By.TAG_NAME, "body").text
+        except Exception as e:
+            print(f"Could not read page body for {slug}: {type(e).__name__}: {e}")
+            self._capture_failure_screenshot(f"state_body_unreadable_{slug}")
+            return False
 
-                    # Check if already selected
-                    current_selection = select.first_selected_option.text.strip()
-                    if current_selection.lower() == state_name.lower():
-                        print(f"ℹ️  State '{state_name}' is already selected, skipping re-selection")
-                        self._wait_for_page_load_complete()
-                        return True
+        if "page not found" in body.lower():
+            print(f"State route {target} rendered the 404 view")
+            self._capture_failure_screenshot(f"state_not_found_{slug}")
+            return False
 
-                    # Try exact match first
-                    selected = False
-                    try:
-                        select.select_by_visible_text(state_name)
-                        selected = True
-                        print(f"✅ Selected state: {state_name}")
-                    except NoSuchElementException:
-                        # Try case-insensitive match
-                        for option in select.options:
-                            if option.text.strip().lower() == state_name.lower():
-                                select.select_by_visible_text(option.text.strip())
-                                selected = True
-                                print(f"✅ Selected state: {option.text.strip()}")
-                                break
+        if state_name.strip().lower() not in body.lower():
+            print(f"State route {target} did not render '{state_name}'")
+            self._capture_failure_screenshot(f"state_content_missing_{slug}")
+            return False
 
-                    if selected:
-                        # Wait for page to reload after state change
-                        self._wait_for_page_load_complete()
-                        return True
-                    else:
-                        print(f"❌ State '{state_name}' not found in dropdown options: {available_options}")
-                        return False
+        # /en/<slug> is a disaster-type hub on dev, not the dashboard - header and
+        # footer are there, but no chart, sidebar or calendar. Step through it the
+        # same way CommonPage.navigate_to_analytics() does. prod links straight to
+        # the dashboard and has no Explore link, so this is a no-op there.
+        from locators.common_locators import DisasterHubLocators
 
-                except TimeoutException:
-                    # APPROACH 2: Fallback to sidebar list item approach
-                    print(f"⚠️  <select> dropdown not found, trying sidebar list item approach...")
+        if self.is_element_visible(
+            DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)", timeout=5
+        ):
+            if not self.click(DisasterHubLocators.EXPLORE_LINK, "Explore (disaster hub)"):
+                print(f"Could not step through the disaster hub for {slug}")
+                self._capture_failure_screenshot(f"state_hub_stuck_{slug}")
+                return False
+            self._wait_for_page_load_complete()
 
-                    # Use case-insensitive XPath for sidebar list items
-                    state_xpath = f"//li[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{state_name.lower()}')]"
-
-                    state_element = wait.until(
-                        EC.presence_of_element_located((By.XPATH, state_xpath))
-                    )
-
-                    # Scroll into view
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", state_element)
-                    # Click the state
-                    success = self.click((By.XPATH, state_xpath), f"State: {state_name}")
-                    if success:
-                        # Wait for page to reload after state change
-                        self._wait_for_page_load_complete()
-                        print(f"✅ Selected state: {state_name}")
-                        return True
-                    else:
-                        self._capture_failure_screenshot(f"state_click_failed_{state_name}")
-                        return False
-
-            except (StaleElementReferenceException, ElementNotInteractableException) as e:
-                if attempt < max_retries - 1:
-                    print(f"⚠️  State selection failed ({type(e).__name__}), retrying ({attempt + 1}/{max_retries})...")
-                    continue
-                else:
-                    print(f"❌ Failed to select state {state_name} after {max_retries} attempts: {e}")
-                    self._capture_failure_screenshot(f"state_selection_error_{state_name}")
-                    return False
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    print(f"⚠️  Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
-                    print(f"⚠️  Retrying ({attempt + 1}/{max_retries})...")
-                    continue
-                else:
-                    print(f"❌ Failed to select state {state_name}: {type(e).__name__}: {e}")
-                    self._capture_failure_screenshot(f"state_selection_exception_{state_name}")
-                    return False
-
-        return False
+        return True
 
     def _capture_failure_screenshot(self, filename):
         """Capture screenshot on failure for debugging"""
@@ -515,6 +508,14 @@ class AnalyticsPage(BasePage):
 
         return False
 
+    @staticmethod
+    def _xpath_literal(text):
+        """Build a safe XPath string literal, handling embedded apostrophes via concat()."""
+        if "'" not in text:
+            return f"'{text}'"
+        parts = text.split("'")
+        return "concat(" + ", \"'\", ".join(f"'{part}'" for part in parts) + ")"
+
     def select_indicator_by_text(self, indicator_text, section_name="Indicator"):
         """
         Dynamically select an indicator by its text label (supports any indicator)
@@ -540,28 +541,28 @@ class AnalyticsPage(BasePage):
             try:
                 wait = WebDriverWait(self.driver, 20)  # Increased timeout for parallel execution
 
-                # Fix XPath injection for indicators with apostrophes by using concat
-                # If indicator_text contains apostrophes, we need to escape them properly
-                if "'" in indicator_text:
-                    # Split on apostrophes and use concat to build the XPath string
-                    parts = indicator_text.split("'")
-                    xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                    label_xpath = f"//label[@aria-label={xpath_string}]"
-                else:
-                    label_xpath = f"//label[@aria-label='{indicator_text}']"
+                # Case-insensitive on purpose: indicator label casing has drifted
+                # from the state config on the live product for some indicators but
+                # not others (e.g. "Elderly population" in config vs the live
+                # "Elderly Population", while Hazard's labels match config exactly)
+                # — confirmed live 2026-09-10, not a wholesale convention change.
+                # Chasing every config file every time a label's case changes is
+                # the wrong fix; the lookup just shouldn't care about case.
+                lowered = self._xpath_literal(indicator_text.lower())
+                lower_attr = "translate(@aria-label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+                lower_span = (
+                    "translate(normalize-space(.//span), "
+                    "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+                )
+                label_xpath = f"//label[{lower_attr}={lowered}]"
 
                 try:
                     label_element = wait.until(
                         EC.element_to_be_clickable((By.XPATH, label_xpath))
                     )
                 except TimeoutException:
-                    # Fallback: try finding by visible text in span with proper apostrophe handling
-                    if "'" in indicator_text:
-                        parts = indicator_text.split("'")
-                        xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                        label_xpath = f"//label[.//span[normalize-space()={xpath_string}]]"
-                    else:
-                        label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+                    # Fallback: match by visible span text instead of the aria-label
+                    label_xpath = f"//label[{lower_span}={lowered}]"
 
                     label_element = wait.until(
                         EC.element_to_be_clickable((By.XPATH, label_xpath))

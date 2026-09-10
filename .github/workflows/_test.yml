@@ -27,6 +27,12 @@ on:
         description: Run scripts/discover_state_indicators.py if states_master.yaml is missing.
         type: boolean
         default: false
+      store_durations:
+        description: >
+          Record each test's runtime and upload the per-shard fragments, for
+          refreshing .test_durations. Only meaningful on a green full run.
+        type: boolean
+        default: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -114,6 +120,22 @@ jobs:
             MARKER_ARGS=(-m "${{ inputs.markers }}")
           fi
 
+          # Refresh mode: pytest-split reads and writes the same path, so seed the
+          # shard's file with the committed durations (keeping the split balanced
+          # by the data we already have) and let the run overwrite it. With
+          # --clean-durations the fragment ends up holding only this shard's tests,
+          # which is exactly what scripts/merge_durations.py wants to reassemble.
+          STORE_ARGS=()
+          if [ "${{ inputs.store_durations }}" = "true" ]; then
+            SHARD_FILE=".test_durations_shard_${{ matrix.shard }}"
+            # Guarded, not `[ -f ] && cp`: under `set -e` a false test would abort.
+            if [ -f "$DURATION_FILE" ]; then
+              cp "$DURATION_FILE" "$SHARD_FILE"
+            fi
+            DURATION_FILE="$SHARD_FILE"
+            STORE_ARGS=(--store-durations --clean-durations)
+          fi
+
           # --dist load (not loadgroup): let tests scatter freely across workers so a
           # heavy state isn't pinned to one worker. State Chrome reuse still works per
           # worker via the conftest _state_drivers pool.
@@ -127,7 +149,8 @@ jobs:
             --self-contained-html \
             --junitxml="reports/junit_shard_${{ matrix.shard }}.xml" \
             "${SPLIT_ARGS[@]}" \
-            "${MARKER_ARGS[@]}"
+            "${MARKER_ARGS[@]}" \
+            "${STORE_ARGS[@]}"
 
       - name: Upload shard reports
         if: always()
@@ -141,6 +164,15 @@ jobs:
             reports/self_healing/
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Upload duration fragment
+        if: inputs.store_durations && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: durations-shard-${{ matrix.shard }}
+          path: .test_durations_shard_${{ matrix.shard }}
+          retention-days: 7
+          if-no-files-found: error
 
       - name: Upload screenshots on failure
         if: failure()
@@ -201,6 +233,18 @@ jobs:
         with:
           files: reports/junit_shard_*.xml
           check_name: Test Results (${{ inputs.markers || 'all' }})
+
+      # The published check is built from the JUnit XML that arrived. A shard that
+      # is cancelled, times out, or dies before pytest writes its XML contributes
+      # no file - so the check reports green on the surviving shards alone. Seen on
+      # run 34343989609: shards 1 and 2 cancelled, "Test Results (all)" still
+      # passed. Gate on the matrix result, which cannot go missing.
+      - name: Fail if any shard did not succeed
+        if: needs.test.result != 'success'
+        run: |
+          echo "::error::Shard matrix result was '${{ needs.test.result }}', not 'success'."
+          echo "::error::Refusing to report a green summary - check the individual shards."
+          exit 1
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
