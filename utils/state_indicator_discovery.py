@@ -30,6 +30,9 @@ class StateIndicatorDiscovery:
     ]
 
     # URL slugs match the <select> option values (hyphens, not underscores)
+    # Only Flood carries real data today; the hub lists other disaster types.
+    DISASTER_TYPE = "flood"
+
     STATE_URL_SLUGS = {
         "Assam": "assam",
         "Himachal pradesh": "himachal-pradesh",
@@ -147,9 +150,25 @@ class StateIndicatorDiscovery:
                 print(f"❌ No URL slug found for state: {state_name}")
                 return False
 
-            target_url = f"{Config.BASE_URL}en/{url_slug}/analytics?indicator=risk-score&view=map"
+            # /en/<slug>/analytics 307-redirects to /en/<slug>, which is the
+            # disaster-type hub - no sidebar, so discovery would find zero
+            # indicators and happily write empty configs over good ones. The
+            # dashboard lives one segment deeper, under the disaster type.
+            target_url = (
+                f"{Config.BASE_URL.rstrip('/')}/en/{url_slug}/{self.DISASTER_TYPE}"
+                f"/analytics?indicator=risk-score&view=map"
+            )
             self.driver.get(target_url)
             time.sleep(3)
+
+            landed = self.driver.current_url.split("?")[0].rstrip("/")
+            if not landed.endswith(f"/{self.DISASTER_TYPE}/analytics"):
+                print(
+                    f"❌ {state_name}: expected the {self.DISASTER_TYPE} dashboard, "
+                    f"landed on {landed} - refusing to discover from the wrong page"
+                )
+                return False
+
             print(f"✅ Navigated to state: {state_name} ({target_url})")
             return True
 
@@ -222,8 +241,13 @@ class StateIndicatorDiscovery:
 
             for idx, element in enumerate(indicator_elements, 1):
                 try:
-                    # aria-label holds the display name directly in the new UI
-                    indicator_text = element.get_attribute("aria-label") or element.text.strip()
+                    # aria-label holds the display name directly in the new UI.
+                    # Strip stray footnote markers (e.g. a trailing '*') — odisha.yaml
+                    # had 4 indicators saved as "Population*" etc. from an earlier
+                    # discovery run, which then never matched the live aria-label
+                    # ("Population") and made select_indicator_by_text() fail for
+                    # every test using that config. Confirmed live 2026-09-10.
+                    indicator_text = (element.get_attribute("aria-label") or element.text.strip()).strip(" *")
 
                     if indicator_text:
                         indicator_data = {
