@@ -79,7 +79,11 @@ class AnalyticsPage(BasePage):
             print(f"⚠️  Warning during load wait: {e}")
             return True  # Don't fail the test if we can't detect loading
 
-    STATE_ROUTE_TEMPLATE = "{base}/en/{slug}"
+    # One path that resolves on both environments, verified live 2026-09-10:
+    #   dev  - 307s to /en/<slug>, the disaster hub, then Explore -> /flood/analytics
+    #   prod - is the dashboard already; /en/<slug> and /en/<slug>/flood/analytics
+    #          both 404 there, so neither can be hardcoded.
+    STATE_ROUTE_TEMPLATE = "{base}/en/{slug}/analytics"
 
     @staticmethod
     def state_slug(state_name):
@@ -114,8 +118,9 @@ class AnalyticsPage(BasePage):
         )
 
         # Already there: don't pay for a reload, and don't disturb page state.
+        # The path differs per environment, so match on the slug segment.
         current = self.driver.current_url.split("?")[0].rstrip("/")
-        if current.endswith(f"/en/{slug}"):
+        if f"/en/{slug}/" in current + "/":
             self._wait_for_page_load_complete()
             return True
 
@@ -134,9 +139,11 @@ class AnalyticsPage(BasePage):
             self._capture_failure_screenshot(f"state_error_page_{slug}")
             return False
 
+        # dev redirects /en/<slug>/analytics -> /en/<slug>; prod stays put. Assert
+        # on the slug segment rather than a full path either env might not use.
         landed = self.driver.current_url.split("?")[0].rstrip("/")
-        if not landed.endswith(f"/en/{slug}"):
-            print(f"Expected to land on /en/{slug}, got: {landed}")
+        if f"/en/{slug}/" not in landed + "/":
+            print(f"Expected a /en/{slug} route, got: {landed}")
             self._capture_failure_screenshot(f"state_wrong_route_{slug}")
             return False
 
@@ -501,6 +508,14 @@ class AnalyticsPage(BasePage):
 
         return False
 
+    @staticmethod
+    def _xpath_literal(text):
+        """Build a safe XPath string literal, handling embedded apostrophes via concat()."""
+        if "'" not in text:
+            return f"'{text}'"
+        parts = text.split("'")
+        return "concat(" + ", \"'\", ".join(f"'{part}'" for part in parts) + ")"
+
     def select_indicator_by_text(self, indicator_text, section_name="Indicator"):
         """
         Dynamically select an indicator by its text label (supports any indicator)
@@ -526,28 +541,28 @@ class AnalyticsPage(BasePage):
             try:
                 wait = WebDriverWait(self.driver, 20)  # Increased timeout for parallel execution
 
-                # Fix XPath injection for indicators with apostrophes by using concat
-                # If indicator_text contains apostrophes, we need to escape them properly
-                if "'" in indicator_text:
-                    # Split on apostrophes and use concat to build the XPath string
-                    parts = indicator_text.split("'")
-                    xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                    label_xpath = f"//label[@aria-label={xpath_string}]"
-                else:
-                    label_xpath = f"//label[@aria-label='{indicator_text}']"
+                # Case-insensitive on purpose: indicator label casing has drifted
+                # from the state config on the live product for some indicators but
+                # not others (e.g. "Elderly population" in config vs the live
+                # "Elderly Population", while Hazard's labels match config exactly)
+                # — confirmed live 2026-09-10, not a wholesale convention change.
+                # Chasing every config file every time a label's case changes is
+                # the wrong fix; the lookup just shouldn't care about case.
+                lowered = self._xpath_literal(indicator_text.lower())
+                lower_attr = "translate(@aria-label, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+                lower_span = (
+                    "translate(normalize-space(.//span), "
+                    "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
+                )
+                label_xpath = f"//label[{lower_attr}={lowered}]"
 
                 try:
                     label_element = wait.until(
                         EC.element_to_be_clickable((By.XPATH, label_xpath))
                     )
                 except TimeoutException:
-                    # Fallback: try finding by visible text in span with proper apostrophe handling
-                    if "'" in indicator_text:
-                        parts = indicator_text.split("'")
-                        xpath_string = "concat(" + ", \"'\", ".join([f"'{part}'" for part in parts]) + ")"
-                        label_xpath = f"//label[.//span[normalize-space()={xpath_string}]]"
-                    else:
-                        label_xpath = f"//label[.//span[normalize-space()='{indicator_text}']]"
+                    # Fallback: match by visible span text instead of the aria-label
+                    label_xpath = f"//label[{lower_span}={lowered}]"
 
                     label_element = wait.until(
                         EC.element_to_be_clickable((By.XPATH, label_xpath))
