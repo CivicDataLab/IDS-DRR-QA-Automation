@@ -1,6 +1,6 @@
 state_name: Bihar
 state_key: bihar
-discovered_at: '2026-06-17T12:49:10.261671'
+discovered_at: '2026-09-25T20:33:50.152811'
 sections:
   hazard:
     name: Hazard
@@ -10,9 +10,14 @@ sections:
       position: 1
       enabled: true
       section: Hazard
+    - name: Mean Elevation
+      key: mean_elevation
+      position: 2
+      enabled: true
+      section: Hazard
     - name: Mean intensity of inundation (removing 0 intensity pixels)
       key: mean_intensity_of_inundation_removing_0_intensity_pixels
-      position: 2
+      position: 3
       enabled: true
       section: Hazard
   exposure:
@@ -31,19 +36,54 @@ sections:
   vulnerability:
     name: Vulnerability
     indicators:
-    - name: Average availablity of domestic electricity
+    - name: Average Availablity of Domestic Electricity
       key: average_availablity_of_domestic_electricity
       position: 1
       enabled: true
       section: Vulnerability
-    - name: Percentage of households with piped water connection
+    - name: Percentage of Households with Piped Water Connection
       key: percentage_of_households_with_piped_water_connection
       position: 2
       enabled: true
       section: Vulnerability
-    - name: Percentage of households without sanitation facilities
+    - name: Percentage of Households Without Sanitation Facilities
       key: percentage_of_households_without_sanitation_facilities
       position: 3
+      enabled: true
+      section: Vulnerability
+    - name: Number of Health Centres
+      key: number_of_health_centres
+      position: 4
+      enabled: true
+      section: Vulnerability
+    - name: Number of Schools
+      key: number_of_schools
+      position: 5
+      enabled: true
+      section: Vulnerability
+    - name: Length of Rail in the Region
+      key: length_of_rail_in_the_region
+      position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Length of Road
+      key: length_of_road
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Mean Sex Ratio
+      key: mean_sex_ratio
+      position: 8
+      enabled: true
+      section: Vulnerability
+    - name: Elderly Population
+      key: elderly_population
+      position: 9
+      enabled: true
+      section: Vulnerability
+    - name: Children Population
+      key: children_population
+      position: 10
       enabled: true
       section: Vulnerability
   government_response:
