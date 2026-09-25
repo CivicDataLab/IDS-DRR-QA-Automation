@@ -45,6 +45,21 @@ class AnalyticsPage(BasePage):
         except Exception:
             return False
 
+    def is_no_data_displayed(self):
+        """True when the app shows its explicit 'No data available.' state."""
+        from selenium.webdriver.common.by import By
+        return any(e.is_displayed() for e in self.driver.find_elements(
+            By.XPATH, "//*[normalize-space(text())='No data available.']"))
+
+    def is_indicator_listed(self, indicator_text):
+        """True if the current view's indicator menu offers this indicator (case-insensitive, like select_indicator_by_text)."""
+        from selenium.webdriver.common.by import By
+        lowered = self._xpath_literal(indicator_text.lower())
+        upper, lower = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"
+        xpath = (f"//label[translate(@aria-label, '{upper}', '{lower}')={lowered}"
+                 f" or translate(normalize-space(.//span), '{upper}', '{lower}')={lowered}]")
+        return bool(self.driver.find_elements(By.XPATH, xpath))
+
     def _wait_for_page_load_complete(self, timeout=30):
         """Wait for page to complete loading - checks for loading spinners"""
         from selenium.webdriver.common.by import By
