@@ -1,6 +1,6 @@
 state_name: Assam
 state_key: assam
-discovered_at: '2026-06-17T12:46:53.428406'
+discovered_at: '2026-09-25T20:32:56.237924'
 sections:
   hazard:
     name: Hazard
@@ -33,16 +33,6 @@ sections:
       position: 2
       enabled: true
       section: Exposure
-    - name: Elderly population
-      key: elderly_population
-      position: 3
-      enabled: true
-      section: Exposure
-    - name: Children population
-      key: children_population
-      position: 4
-      enabled: true
-      section: Exposure
   vulnerability:
     name: Vulnerability
     indicators:
@@ -51,116 +41,138 @@ sections:
       position: 1
       enabled: true
       section: Vulnerability
-    - name: Average availablity of domestic electricity
+    - name: Average Availablity of Domestic Electricity
       key: average_availablity_of_domestic_electricity
       position: 2
       enabled: true
       section: Vulnerability
-    - name: Percentage of households with piped water connection
+    - name: Percentage of Households with Piped Water Connection
       key: percentage_of_households_with_piped_water_connection
       position: 3
       enabled: true
       section: Vulnerability
-    - name: Percentage of households without sanitation facilities
+    - name: Percentage of Households Without Sanitation Facilities
       key: percentage_of_households_without_sanitation_facilities
       position: 4
       enabled: true
       section: Vulnerability
-    - name: Number of Schools
-      key: number_of_schools
+    - name: Elderly Population
+      key: elderly_population
       position: 5
       enabled: true
       section: Vulnerability
-    - name: Length of rail in the region
-      key: length_of_rail_in_the_region
+    - name: Children Population
+      key: children_population
       position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Women Population
+      key: women_population
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Number of Schools
+      key: number_of_schools
+      position: 8
+      enabled: true
+      section: Vulnerability
+    - name: Length of Rail in the Region
+      key: length_of_rail_in_the_region
+      position: 9
       enabled: true
       section: Vulnerability
     - name: Length of Road
       key: length_of_road
-      position: 7
+      position: 10
       enabled: true
       section: Vulnerability
     - name: Net Sown Area
       key: net_sown_area
-      position: 8
+      position: 11
       enabled: true
       section: Vulnerability
     - name: Mean Sex Ratio
       key: mean_sex_ratio
-      position: 9
+      position: 12
       enabled: true
       section: Vulnerability
     - name: Total Population Affected
       key: total_population_affected
-      position: 10
+      position: 13
       enabled: true
       section: Vulnerability
     - name: Human Lives Lost
       key: human_lives_lost
-      position: 11
+      position: 14
       enabled: true
       section: Vulnerability
     - name: Total Crop Area Affected
       key: total_crop_area_affected
-      position: 12
+      position: 15
       enabled: true
       section: Vulnerability
     - name: Total Number of Embankments Affected
       key: total_number_of_embankments_affected
-      position: 13
+      position: 16
       enabled: true
       section: Vulnerability
     - name: Total Number of Roads Damaged
       key: total_number_of_roads_damaged
-      position: 14
+      position: 17
       enabled: true
       section: Vulnerability
     - name: Number of Bridges damaged
       key: number_of_bridges_damaged
-      position: 15
+      position: 18
       enabled: true
       section: Vulnerability
     - name: Number of embankments breached
       key: number_of_embankments_breached
-      position: 16
+      position: 19
+      enabled: true
+      section: Vulnerability
+    - name: Number of Relief camps
+      key: number_of_relief_camps
+      position: 20
       enabled: true
       section: Vulnerability
     - name: Total Infrastructure Damage
       key: total_infrastructure_damage
-      position: 17
+      position: 21
       enabled: true
       section: Vulnerability
   government_response:
     name: Government Response
     indicators:
-    - name: Total Value of Flood Tenders
-      key: total_value_of_flood_tenders
+    - name: 'Flood Tenders : Total Value'
+      key: flood_tenders_total_value
       position: 1
       enabled: true
       section: Government Response
-    - name: Total Value of Flood Tenders Under SDRF
-      key: total_value_of_flood_tenders_under_sdrf
+    - name: 'Flood Tenders Under SDRF : Total value'
+      key: flood_tenders_under_sdrf_total_value
       position: 2
       enabled: true
       section: Government Response
-    - name: Total Value of Flood Tenders for Repairs and Restoration
-      key: total_value_of_flood_tenders_for_repairs_and_restoration
+    - name: 'Repairs and Restoration Flood Tenders : Total Value'
+      key: repairs_and_restoration_flood_tenders_total_value
       position: 3
       enabled: true
       section: Government Response
-    - name: Total Value of Flood Tenders for Immediate Measures
-      key: total_value_of_flood_tenders_for_immediate_measures
+    - name: 'Immediate Measure Flood Tenders : Total Value'
+      key: immediate_measure_flood_tenders_total_value
       position: 4
       enabled: true
       section: Government Response
-    - name: Total value of flood tenders related to Others
-      key: total_value_of_flood_tenders_related_to_others
+    - name: 'Other Flood Tenders : Total value of Non restoration and Preparedness
+        tenders'
+      key: other_flood_tenders_total_value_of_non_restoration_and_preparedness_tenders
       position: 5
       enabled: true
       section: Government Response
-    - name: Total value of funds allocated through SDRF during SEC meetings
-      key: total_value_of_funds_allocated_through_sdrf_during_sec_meetings
+    - name: 'State Disaster Relief Funds Allocated District-wise During SEC meetings
+        : Total Value'
+      key: state_disaster_relief_funds_allocated_district_wise_during_sec_meetings_total_value
       position: 6
       enabled: true
       section: Government Response

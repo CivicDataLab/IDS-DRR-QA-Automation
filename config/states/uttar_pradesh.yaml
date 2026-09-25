@@ -1,6 +1,6 @@
 state_name: Uttar pradesh
 state_key: uttar_pradesh
-discovered_at: '2026-06-17T12:49:56.505219'
+discovered_at: '2026-09-25T20:34:08.593667'
 sections:
   hazard:
     name: Hazard
@@ -8,6 +8,11 @@ sections:
     - name: Total Monthly Rainfall
       key: total_monthly_rainfall
       position: 1
+      enabled: true
+      section: Hazard
+    - name: Mean Elevation
+      key: mean_elevation
+      position: 2
       enabled: true
       section: Hazard
   exposure:
@@ -26,21 +31,103 @@ sections:
   vulnerability:
     name: Vulnerability
     indicators:
-    - name: Average availablity of domestic electricity
-      key: average_availablity_of_domestic_electricity
+    - name: Number of Health Centres
+      key: number_of_health_centres
       position: 1
       enabled: true
       section: Vulnerability
-    - name: Percentage of households with piped water connection
-      key: percentage_of_households_with_piped_water_connection
+    - name: Average Availablity of Domestic Electricity
+      key: average_availablity_of_domestic_electricity
       position: 2
       enabled: true
       section: Vulnerability
-    - name: Percentage of households without sanitation facilities
-      key: percentage_of_households_without_sanitation_facilities
+    - name: Percentage of Households with Piped Water Connection
+      key: percentage_of_households_with_piped_water_connection
       position: 3
+      enabled: true
+      section: Vulnerability
+    - name: Percentage of Households Without Sanitation Facilities
+      key: percentage_of_households_without_sanitation_facilities
+      position: 4
+      enabled: true
+      section: Vulnerability
+    - name: Number of Schools
+      key: number_of_schools
+      position: 5
+      enabled: true
+      section: Vulnerability
+    - name: Length of Rail in the Region
+      key: length_of_rail_in_the_region
+      position: 6
+      enabled: true
+      section: Vulnerability
+    - name: Length of Road
+      key: length_of_road
+      position: 7
+      enabled: true
+      section: Vulnerability
+    - name: Mean Sex Ratio
+      key: mean_sex_ratio
+      position: 8
+      enabled: true
+      section: Vulnerability
+    - name: Elderly Population
+      key: elderly_population
+      position: 9
+      enabled: true
+      section: Vulnerability
+    - name: Children Population
+      key: children_population
+      position: 10
       enabled: true
       section: Vulnerability
   government_response:
     name: Government Response
-    indicators: []
+    indicators:
+    - name: 'Flood Tenders : Total Value'
+      key: flood_tenders_total_value
+      position: 1
+      enabled: true
+      section: Government Response
+    - name: 'Flood Tenders Under SDRF : Total value'
+      key: flood_tenders_under_sdrf_total_value
+      position: 2
+      enabled: true
+      section: Government Response
+    - name: 'Repairs and Restoration Flood Tenders : Total Value'
+      key: repairs_and_restoration_flood_tenders_total_value
+      position: 3
+      enabled: true
+      section: Government Response
+    - name: 'Immediate Measure Flood Tenders : Total Value'
+      key: immediate_measure_flood_tenders_total_value
+      position: 4
+      enabled: true
+      section: Government Response
+    - name: 'Other Flood Tenders : Total value of Non restoration and Preparedness
+        tenders'
+      key: other_flood_tenders_total_value_of_non_restoration_and_preparedness_tenders
+      position: 5
+      enabled: true
+      section: Government Response
+    - name: 'State Disaster Relief Funds Allocated District-wise During SEC meetings
+        : Total Value'
+      key: state_disaster_relief_funds_allocated_district_wise_during_sec_meetings_total_value
+      position: 6
+      enabled: true
+      section: Government Response
+    - name: 'Preparedness Measures Flood Tenders : Total Value'
+      key: preparedness_measures_flood_tenders_total_value
+      position: 7
+      enabled: true
+      section: Government Response
+    - name: 'Flood tenders Under RIDF Scheme : Total Value'
+      key: flood_tenders_under_ridf_scheme_total_value
+      position: 8
+      enabled: true
+      section: Government Response
+    - name: 'Immediate Measure Flood Tenders : Total Value'
+      key: immediate_measure_flood_tenders_total_value
+      position: 9
+      enabled: true
+      section: Government Response

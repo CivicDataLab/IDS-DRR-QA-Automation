@@ -1,6 +1,6 @@
 state_name: Odisha
 state_key: odisha
-discovered_at: '2026-06-17T12:48:23.921738'
+discovered_at: '2026-09-25T20:33:32.412023'
 sections:
   hazard:
     name: Hazard
@@ -53,12 +53,12 @@ sections:
   exposure:
     name: Exposure
     indicators:
-    - name: Total Number of Households*
+    - name: Total Number of Households
       key: total_number_of_households
       position: 1
       enabled: true
       section: Exposure
-    - name: Population*
+    - name: Population
       key: population
       position: 2
       enabled: true
@@ -66,46 +66,61 @@ sections:
   vulnerability:
     name: Vulnerability
     indicators:
-    - name: Average availablity of domestic electricity
+    - name: Average Availablity of Domestic Electricity
       key: average_availablity_of_domestic_electricity
       position: 1
       enabled: true
       section: Vulnerability
-    - name: Percentage of households with piped water connection
+    - name: Percentage of Households with Piped Water Connection
       key: percentage_of_households_with_piped_water_connection
       position: 2
       enabled: true
       section: Vulnerability
-    - name: Percentage of households without sanitation facilities
+    - name: Percentage of Households Without Sanitation Facilities
       key: percentage_of_households_without_sanitation_facilities
       position: 3
       enabled: true
       section: Vulnerability
-    - name: Elderly population*
+    - name: Elderly Population
       key: elderly_population
       position: 4
       enabled: true
       section: Vulnerability
-    - name: Children population*
+    - name: Children Population
       key: children_population
       position: 5
       enabled: true
       section: Vulnerability
-    - name: Total Number of Human Deaths due to flood and cyclone
-      key: total_number_of_human_deaths_due_to_flood_and_cyclone
+    - name: 'Human Lives Lost : Flood and Cyclone'
+      key: human_lives_lost_flood_and_cyclone
       position: 6
       enabled: true
       section: Vulnerability
-    - name: Estimated Population Affected by Floods and Cyclones
-      key: estimated_population_affected_by_floods_and_cyclones
+    - name: Population Affected by Flood and Cyclone
+      key: population_affected_by_flood_and_cyclone
       position: 7
       enabled: true
       section: Vulnerability
-    - name: Cultivated Area Affected by Floods and Cyclones
-      key: cultivated_area_affected_by_floods_and_cyclones
+    - name: Cultivated Area Affected by Flood and Cyclone
+      key: cultivated_area_affected_by_flood_and_cyclone
       position: 8
       enabled: true
       section: Vulnerability
   government_response:
     name: Government Response
-    indicators: []
+    indicators:
+    - name: 'Preparedness Measures Flood Tenders : Total Value'
+      key: preparedness_measures_flood_tenders_total_value
+      position: 1
+      enabled: true
+      section: Government Response
+    - name: 'Immediate Measure Flood Tenders : Total Value'
+      key: immediate_measure_flood_tenders_total_value
+      position: 2
+      enabled: true
+      section: Government Response
+    - name: 'Flood tenders Under RIDF Scheme : Total Value'
+      key: flood_tenders_under_ridf_scheme_total_value
+      position: 3
+      enabled: true
+      section: Government Response
