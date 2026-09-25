@@ -29,6 +29,7 @@ Run:
 """
 
 import pytest
+import warnings
 from pages.common_page import CommonPage
 from pages.analytics_page import AnalyticsPage
 from utils.state_config_loader import get_config_loader
@@ -682,7 +683,7 @@ class TestMultiStateIndicatorsChartView:
         assert expand_method(), f"❌ Failed to expand {section}"
         print(f"✅ {section.replace('_', ' ').title()} section expanded - testing all indicators\n")
 
-        passed, failed = [], []
+        passed, failed, not_offered = [], [], []
 
         for idx, indicator in enumerate(enabled_indicators, 1):
             indicator_name = indicator.get("name")
@@ -690,6 +691,13 @@ class TestMultiStateIndicatorsChartView:
 
             try:
                 if not analytics_page.select_indicator_by_text(indicator_name, section):
+                    # Chart view leaves out indicators it cannot chart (e.g. UP's
+                    # SDRF / SEC-meeting tenders) that map and table view still list;
+                    # those two views keep failing if an indicator really disappears.
+                    if not analytics_page.is_indicator_listed(indicator_name):
+                        not_offered.append(indicator_name)
+                        print(f"  ⚠️  Not offered in Chart View")
+                        continue
                     failed.append({'name': indicator_name, 'reason': 'Failed to select'})
                     print(f"  ❌ Failed to select")
                     continue
@@ -734,6 +742,9 @@ class TestMultiStateIndicatorsChartView:
         print(f"✅ Passed: {len(passed)}/{len(enabled_indicators)}")
         print(f"❌ Failed: {len(failed)}/{len(enabled_indicators)}")
         print(f"{'='*80}\n")
+
+        if not_offered:
+            warnings.warn(f"{state_name} {section}: not offered in Chart View: {not_offered}")
 
         # Assert that ALL indicators passed - any failure should fail the test
         if failed:
@@ -797,7 +808,7 @@ class TestMultiStateIndicatorsTableView:
         assert expand_method(), f"❌ Failed to expand {section}"
         print(f"✅ {section.replace('_', ' ').title()} section expanded - testing all indicators\n")
 
-        passed, failed = [], []
+        passed, failed, no_data = [], [], []
 
         for idx, indicator in enumerate(enabled_indicators, 1):
             indicator_name = indicator.get("name")
@@ -839,6 +850,10 @@ class TestMultiStateIndicatorsTableView:
                         analytics_page.select_revenue_circle(revenue_circle)
                         expand_method()
                         print(f"  ✅ Recovery complete")
+                    elif analytics_page.is_no_data_displayed():
+                        # The app's explicit empty state: a data gap, reported not failed.
+                        no_data.append(indicator_name)
+                        print(f"  ⚠️  No data available")
                     else:
                         failed.append({'name': indicator_name, 'reason': f'Table validation failed: {str(e)[:80]}'})
                         print(f"  ❌ Table validation failed")
@@ -854,6 +869,9 @@ class TestMultiStateIndicatorsTableView:
         print(f"{'='*80}\n")
 
         # Assert that ALL indicators passed - any failure should fail the test
+        if no_data:
+            warnings.warn(f"{state_name} {section}: 'No data available.' in Table View: {no_data}")
+
         if failed:
             failure_summary = f"❌ {len(failed)}/{len(enabled_indicators)} indicators FAILED (Table View)"
             failure_details = "\n".join([f"  • {f['name']}: {f['reason']}" for f in failed[:5]])
