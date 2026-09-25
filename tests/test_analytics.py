@@ -812,8 +812,11 @@ class TestMultiStateIndicatorsTableView:
                 wait = WebDriverWait(driver, 20)
 
                 try:
-                    table_element = wait.until(EC.visibility_of_element_located(
-                        (By.CSS_SELECTOR, "table, .table, [class*='table']")))
+                    # Any visible <table>. The old "[class*='table']" matched the
+                    # page's `tabler-icon` SVGs first, and waiting on that icon
+                    # failed every table-view test while the table rendered fine.
+                    table_element = wait.until(lambda d: next(
+                        (t for t in d.find_elements(By.TAG_NAME, "table") if t.is_displayed()), False))
 
                     if table_element.is_displayed():
                         passed.append(indicator_name)
