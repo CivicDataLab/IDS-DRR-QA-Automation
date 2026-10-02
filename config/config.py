@@ -44,6 +44,14 @@ class Config:
         'DATASPACE_PROD_API_URL', 'https://api.dataspace.open-contracting.in/api/graphql'
     )
 
+    # The IDS-DRR Data Management (backend) GraphQL API itself — not DataSpace.
+    # This is what NEXT_PUBLIC_DATA_MANAGEMENT_LAYER_URL points the frontend at,
+    # and it exposes each state's resolved resource_id via getStates (see
+    # IDS_DRR_BACKEND_GRAPHQL_URL-dependent tests in test_state_resource_ids.py).
+    IDS_DRR_BACKEND_GRAPHQL_URL = os.getenv(
+        'IDS_DRR_BACKEND_GRAPHQL_URL', 'https://hp.drr.backend.open-contracting.in/graphql'
+    )
+
     # Timeout (seconds) for plain HTTP availability probes
     HTTP_TIMEOUT = int(os.getenv('HTTP_TIMEOUT', '20'))
 
