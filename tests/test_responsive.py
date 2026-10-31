@@ -118,3 +118,68 @@ class TestResponsiveNavigation:
         driver.get(Config.BASE_URL)
         common_page = CommonPage(driver)
         assert _home_link_directly_visible(common_page), "Desktop: Home link not directly visible"
+
+
+# WCAG 2.1 SC 1.4.10 (Reflow, Level AA): content must fit a 320 CSS px wide
+# viewport without horizontal scrolling. 320 is below the 375px "mobile" size
+# used above, so it catches fixed-width controls that 375 hides.
+REFLOW_WIDTH = (320, 640)
+
+# Both defects were measured live (dev, 2026-10-31): the search box on each page
+# is wider than the viewport (datasets 376px wide, glossary 325px wide). Strict,
+# so the day one is fixed this test says so and the marker comes off.
+_OVERFLOW_DEFECT = "Measured live: a search control is wider than the 320px viewport, so the page scrolls horizontally"
+
+
+def _settled_overflow(driver, ready_selector=None):
+    """(overflowing, body_width, window_width) once the page has rendered and stopped changing.
+
+    Several pages grow wider only after client-side content renders (the
+    datasets page was measured at 306px for the first second, then 376px), so
+    a single early read can be too narrow. Waits for `ready_selector` when
+    given, then for two equal width reads in a row.
+    """
+    CommonPage(driver).is_header_logo_visible()
+    if ready_selector:
+        WebDriverWait(driver, 15).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, ready_selector))
+        )
+    last = {"w": None}
+
+    def settled(d):
+        width = d.execute_script("return document.body.scrollWidth")
+        stable = width == last["w"]
+        last["w"] = width
+        return stable
+
+    try:
+        WebDriverWait(driver, 10, poll_frequency=0.5).until(settled)
+    except Exception:
+        pass  # report whatever the width is; the assertion below carries the detail
+    return _has_horizontal_overflow(driver)
+
+
+@pytest.mark.responsive
+class TestReflowAt320:
+    """WCAG 1.4.10: no horizontal scroll at 320 CSS px on the public content pages."""
+
+    @pytest.mark.parametrize(
+        "path,ready_selector",
+        [
+            pytest.param("", None, id="home"),
+            pytest.param("about-us", None, id="about-us"),
+            pytest.param("privacy-policy", None, id="privacy-policy"),
+            pytest.param("datasets", "main input", id="datasets",
+                         marks=pytest.mark.xfail(strict=True, reason=_OVERFLOW_DEFECT)),
+            pytest.param("glossary", "main input", id="glossary",
+                         marks=pytest.mark.xfail(strict=True, reason=_OVERFLOW_DEFECT)),
+        ],
+    )
+    def test_page_reflows_at_320px(self, driver, path, ready_selector):
+        """The page body is no wider than a 320px viewport"""
+        driver.set_window_size(*REFLOW_WIDTH)
+        driver.get(f"{Config.BASE_URL.rstrip('/')}/{path}")
+        overflowing, body_w, window_w = _settled_overflow(driver, ready_selector)
+        assert not overflowing, (
+            f"/{path}: body scrollWidth {body_w}px > viewport {window_w}px at 320px wide"
+        )
