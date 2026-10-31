@@ -170,9 +170,9 @@ class TestReflowAt320:
             pytest.param("about-us", None, id="about-us"),
             pytest.param("privacy-policy", None, id="privacy-policy"),
             pytest.param("datasets", "main input", id="datasets",
-                         marks=pytest.mark.xfail(strict=True, reason=_OVERFLOW_DEFECT)),
+                         marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=_OVERFLOW_DEFECT)),
             pytest.param("glossary", "main input", id="glossary",
-                         marks=pytest.mark.xfail(strict=True, reason=_OVERFLOW_DEFECT)),
+                         marks=pytest.mark.xfail(strict=True, raises=AssertionError, reason=_OVERFLOW_DEFECT)),
         ],
     )
     def test_page_reflows_at_320px(self, driver, path, ready_selector):
