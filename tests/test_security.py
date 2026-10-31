@@ -94,3 +94,20 @@ class TestGraphQLIntrospection:
         )
         enabled = response.status_code == 200 and "__schema" in response.text
         print(f"ℹ️  Data-layer GraphQL introspection enabled: {enabled} (expected on dev)")
+
+
+@pytest.mark.security
+class TestInformationDisclosure:
+    """Response headers should not advertise the application stack."""
+
+    @pytest.mark.xfail(
+        strict=True,
+        raises=AssertionError,
+        reason="Measured live (dev and prod, 2026-10-31): responses carry 'X-Powered-By: Next.js'",
+    )
+    def test_framework_banner_not_exposed(self):
+        """The main page response has no X-Powered-By header"""
+        response = requests.get(Config.BASE_URL, timeout=15)
+        assert "X-Powered-By" not in response.headers, (
+            f"X-Powered-By discloses the stack: {response.headers.get('X-Powered-By')!r}"
+        )
