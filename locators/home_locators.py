@@ -16,3 +16,27 @@ class HomePageLocators:
     # Dataset catalog — any link pointing to the datasets listing
     DATASET_CATALOG_SECTION = (By.XPATH, "//section[.//a[contains(@href,'datasets')]]")
     DATASETS_LINK_HOME = (By.XPATH, "(//a[contains(@href,'datasets') and not(contains(@href,'http'))])[1]")
+
+    # Quick-links carousel internals (merged #534). The arrow buttons carry
+    # their name as visually-hidden text, not an aria-label.
+    QUICK_LINKS_CAROUSEL = (
+        By.XPATH,
+        "//section[@aria-labelledby='home-analytics-heading']//*[@aria-roledescription='carousel']",
+    )
+    QUICK_LINKS_PREV = (
+        By.XPATH,
+        "//section[@aria-labelledby='home-analytics-heading']//button[.//span[normalize-space()='Previous slide']]",
+    )
+    QUICK_LINKS_NEXT = (
+        By.XPATH,
+        "//section[@aria-labelledby='home-analytics-heading']//button[.//span[normalize-space()='Next slide']]",
+    )
+    QUICK_LINKS_VIEWPORT = (
+        By.XPATH,
+        "//section[@aria-labelledby='home-analytics-heading']//*[@aria-roledescription='carousel']"
+        "//div[contains(@class,'overflow-hidden')]",
+    )
+    QUICK_LINKS_SLIDES = (
+        By.XPATH,
+        "//section[@aria-labelledby='home-analytics-heading']//*[@aria-roledescription='slide']",
+    )
