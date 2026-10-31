@@ -35,6 +35,32 @@ class BhashiniPage(BasePage):
         """
         return self._exists(BhashiniLocators.WIDGET_IN_CONTAINER, timeout)
 
+    def container_count(self):
+        """How many language-widget mount points are in the DOM right now"""
+        return len(self.driver.find_elements(*BhashiniLocators.CONTAINER))
+
+    def script_count(self):
+        """How many script tags with the component's own id are in the DOM right now.
+
+        Matched on the id the component sets, not on the plugin URL: the plugin
+        may add further scripts from its own host once it loads.
+        """
+        return len(self.driver.find_elements(*BhashiniLocators.SCRIPT_BY_ID))
+
+    def wait_for_container_count(self, expected, timeout=10):
+        """Wait until exactly `expected` mount points are rendered; returns the final count.
+
+        Navs are swapped by viewport width on the client, so the count settles
+        a moment after a resize or after opening the mobile drawer.
+        """
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                lambda _d: self.container_count() == expected
+            )
+        except Exception:
+            pass
+        return self.container_count()
+
     def get_preferred_language(self):
         """localStorage.preferredLanguage, or None when nothing is selected yet"""
         return self.driver.execute_script(
