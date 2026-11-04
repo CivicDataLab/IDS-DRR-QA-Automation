@@ -20,7 +20,9 @@ Run:
 """
 
 import pytest
+from config.config import Config
 from pages.bhashini_page import BhashiniPage
+from pages.common_page import CommonPage
 
 
 @pytest.mark.component
@@ -74,4 +76,60 @@ class TestBhashiniPluginRender:
             "checked separately, so if those passed the fault is upstream: "
             "translation-plugin.bhashini.co.in failed to load or changed its "
             "mount behaviour."
+        )
+
+
+@pytest.mark.flow
+@pytest.mark.responsive
+class TestBhashiniNavVariants:
+    """#539 renders the widget from both MainNav (>=1024px) and MobileNav (<1024px).
+
+    The nav variant is chosen on the client by viewport width, so the widget's
+    script and mount point have to survive being mounted, unmounted and
+    re-mounted. Only our own integration points are asserted (see the module
+    docstring): the mount point and the script tag, never the third-party UI.
+    """
+
+    def test_mobile_menu_offers_one_language_widget_mount(self, driver):
+        """Opening the mobile menu renders exactly one widget mount point and one plugin script"""
+        driver.set_window_size(375, 800)
+        driver.get(Config.BASE_URL)
+        common = CommonPage(driver)
+        page = BhashiniPage(driver)
+
+        assert common.open_mobile_menu(), "Could not open the mobile menu at 375px"
+        containers = page.wait_for_container_count(1)
+
+        assert containers == 1, (
+            f"Mobile menu is open but {containers} .bhashini-plugin-container nodes are in "
+            "the DOM; expected exactly 1, so mobile users have no language selector"
+        )
+        assert page.is_script_injected_by_id(), "Plugin script was not injected on the mobile layout"
+        assert page.script_count() == 1, (
+            f"{page.script_count()} Bhashini plugin scripts in the DOM; expected 1"
+        )
+
+    def test_switching_between_nav_layouts_keeps_a_single_widget(self, driver):
+        """Desktop -> mobile -> desktop re-mounts the widget without duplicating it or its script"""
+        driver.set_window_size(1280, 900)
+        driver.get(Config.BASE_URL)
+        common = CommonPage(driver)
+        page = BhashiniPage(driver)
+        assert page.wait_for_container_count(1) == 1, "Desktop nav has no widget mount point"
+
+        driver.set_window_size(800, 900)
+        assert common.open_mobile_menu(), "Mobile menu did not appear after narrowing to 800px"
+        assert page.wait_for_container_count(1) == 1, (
+            f"After switching to the mobile nav there are {page.container_count()} widget mount points"
+        )
+        assert page.script_count() == 1, (
+            f"Plugin script duplicated after the nav switched: {page.script_count()} tags"
+        )
+
+        driver.set_window_size(1280, 900)
+        assert page.wait_for_container_count(1) == 1, (
+            f"After returning to desktop there are {page.container_count()} widget mount points"
+        )
+        assert page.script_count() == 1, (
+            f"Plugin script duplicated after returning to desktop: {page.script_count()} tags"
         )
