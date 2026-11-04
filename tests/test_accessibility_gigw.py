@@ -25,6 +25,8 @@ Run:
     pytest tests/test_accessibility_gigw.py -v -m accessibility
 """
 
+import os
+
 import pytest
 from axe_selenium_python import Axe
 from selenium.webdriver.common.action_chains import ActionChains
@@ -38,6 +40,10 @@ from locators.common_locators import HeaderLocators
 from locators.module_analytics_locators import ModuleAnalyticsLocators
 from pages.common_page import CommonPage
 from utils.driver_factory import DriverFactory
+
+# axe-selenium-python 2.1.6 bundles axe-core 3.1.1, which has no wcag21a/wcag21aa
+# tags: axe.run rejects and the async script hangs until "script timeout".
+AXE_SCRIPT = os.path.join(os.path.dirname(__file__), "..", "utils", "vendor", "axe-4.10.2.min.js")
 
 WCAG_AA_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
 
@@ -60,7 +66,7 @@ def _wcag_violations(driver, url, ready=()):
     CommonPage(driver).is_header_logo_visible()
     for locator in ready:
         WebDriverWait(driver, Config.LONG_TIMEOUT).until(EC.presence_of_element_located(locator))
-    axe = Axe(driver)
+    axe = Axe(driver, script_url=AXE_SCRIPT)
     axe.inject()
     results = axe.run(options={"runOnly": {"type": "tag", "values": WCAG_AA_TAGS}})
     found = {}
