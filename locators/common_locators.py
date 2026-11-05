@@ -18,7 +18,6 @@ class HeaderLocators:
     HEADER_LOGO = (By.XPATH, "//header//img[@alt='IDS-DRR home']")
 
     # Language dropdown
-    LANGUAGE_DROPDOWN = (By.XPATH, "//select[@name='lang-select']")
 
     # Mobile hamburger toggle — nav links (Home/Analytics/...) aren't in the DOM
     # as visible elements below the tablet breakpoint until this is clicked;

@@ -24,7 +24,7 @@ class TestHomePageComponents:
     def test_header_on_home_page(self, driver):
         """All header elements are present on the home page"""
         common_page = CommonPage(driver)
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Header incomplete on home page: {header_results}"
 
     def test_footer_on_home_page(self, driver):

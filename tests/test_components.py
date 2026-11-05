@@ -27,7 +27,7 @@ class TestHeaderComponents:
     def test_all_header_elements(self, driver):
         """Test all header elements at once (excluding optional language dropdown)"""
         common_page = CommonPage(driver)
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Some header elements missing: {header_results}"
 
     @pytest.mark.negative
@@ -94,7 +94,7 @@ class TestComponentsOnAllPages:
         if navigation_method:
             getattr(common_page, navigation_method)()
 
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Header missing on {page_name}: {header_results}"
 
     @pytest.mark.parametrize("page_name,navigation_method", [
