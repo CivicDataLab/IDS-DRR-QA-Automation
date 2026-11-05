@@ -127,7 +127,4 @@ class TestHomePageEdgeCases:
         if not home_page.is_state_links_section_visible():
             pytest.skip("State links section not present")
 
-        # Carousel next is only relevant if there are enough states to scroll
-        result = home_page.click_carousel_next()
-        # Not a hard failure — some deployments may have fewer states than carousel pages
-        print(f"Carousel next click result: {result}")
+        assert home_page.click_carousel_next(), "Carousel 'Next slide' button could not be clicked"
