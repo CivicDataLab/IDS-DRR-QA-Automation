@@ -71,7 +71,8 @@ class TestAccessibility:
     @pytest.mark.smoke
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children (critical), "
-        "aria-valid-attr-value/aria-valid-attr (critical) on Home — tracked in issue"
+        "aria-valid-attr-value/aria-valid-attr (critical) on Home — tracked in issue",
+        strict=True,
     )
     def test_home_page_accessibility(self, driver):
         """Home page has no critical/serious axe-core violations"""
@@ -80,7 +81,8 @@ class TestAccessibility:
 
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children (critical), "
-        "color-contrast (serious) on the analytics dashboard — tracked in issue"
+        "color-contrast (serious) on the analytics dashboard — tracked in issue",
+        strict=True,
     )
     def test_analytics_page_accessibility(self, driver):
         """Analytics dashboard (Assam, map view) has no critical/serious axe-core violations"""
@@ -89,7 +91,8 @@ class TestAccessibility:
 
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children, aria-valid-attr-value, label "
-        "(all critical), button-name (serious, 27 nodes) on Datasets — tracked in issue"
+        "(all critical), button-name (serious, 27 nodes) on Datasets — tracked in issue",
+        strict=True,
     )
     def test_datasets_page_accessibility(self, driver):
         """Datasets page has no critical/serious axe-core violations"""
@@ -97,7 +100,8 @@ class TestAccessibility:
         assert not critical, f"{len(critical)} critical/serious violation(s): {[v['id'] for v in critical]}"
 
     @pytest.mark.xfail(
-        reason="Live 2026-09-09: aria-required-children (critical) on Glossary — tracked in issue"
+        reason="Live 2026-09-09: aria-required-children (critical) on Glossary — tracked in issue",
+        strict=True,
     )
     def test_glossary_page_accessibility(self, driver):
         """Glossary page has no critical/serious axe-core violations"""
@@ -105,7 +109,8 @@ class TestAccessibility:
         assert not critical, f"{len(critical)} critical/serious violation(s): {[v['id'] for v in critical]}"
 
     @pytest.mark.xfail(
-        reason="Live 2026-09-09: aria-required-children (critical) on About Us — tracked in issue"
+        reason="Live 2026-09-09: aria-required-children (critical) on About Us — tracked in issue",
+        strict=True,
     )
     def test_about_us_page_accessibility(self, driver):
         """About Us page has no critical/serious axe-core violations"""
