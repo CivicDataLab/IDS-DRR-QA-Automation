@@ -24,7 +24,7 @@ class TestHomePageComponents:
     def test_header_on_home_page(self, driver):
         """All header elements are present on the home page"""
         common_page = CommonPage(driver)
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Header incomplete on home page: {header_results}"
 
     def test_footer_on_home_page(self, driver):
@@ -127,7 +127,4 @@ class TestHomePageEdgeCases:
         if not home_page.is_state_links_section_visible():
             pytest.skip("State links section not present")
 
-        # Carousel next is only relevant if there are enough states to scroll
-        result = home_page.click_carousel_next()
-        # Not a hard failure — some deployments may have fewer states than carousel pages
-        print(f"Carousel next click result: {result}")
+        assert home_page.click_carousel_next(), "Carousel 'Next slide' button could not be clicked"

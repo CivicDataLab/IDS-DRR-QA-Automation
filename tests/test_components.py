@@ -18,12 +18,6 @@ class TestHeaderComponents:
         common_page = CommonPage(driver)
         assert common_page.is_header_logo_visible(), "Header logo not visible"
 
-    @pytest.mark.xfail(reason="Language dropdown may be hidden in current UI implementation")
-    def test_language_dropdown_visible(self, driver):
-        """Test language dropdown is visible"""
-        common_page = CommonPage(driver)
-        assert common_page.is_language_dropdown_visible(), "Language dropdown not visible"
-
     @pytest.mark.parametrize("nav_link", ["home", "analytics", "datasets", "about_us"])
     def test_navigation_links_visible(self, driver, nav_link):
         """Test all navigation links are visible"""
@@ -33,7 +27,7 @@ class TestHeaderComponents:
     def test_all_header_elements(self, driver):
         """Test all header elements at once (excluding optional language dropdown)"""
         common_page = CommonPage(driver)
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Some header elements missing: {header_results}"
 
     @pytest.mark.negative
@@ -100,7 +94,7 @@ class TestComponentsOnAllPages:
         if navigation_method:
             getattr(common_page, navigation_method)()
 
-        header_results = common_page.check_all_header_elements(include_language_dropdown=False)
+        header_results = common_page.check_all_header_elements()
         assert all(header_results.values()), f"Header missing on {page_name}: {header_results}"
 
     @pytest.mark.parametrize("page_name,navigation_method", [
