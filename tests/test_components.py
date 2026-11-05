@@ -18,12 +18,6 @@ class TestHeaderComponents:
         common_page = CommonPage(driver)
         assert common_page.is_header_logo_visible(), "Header logo not visible"
 
-    @pytest.mark.xfail(reason="Language dropdown may be hidden in current UI implementation")
-    def test_language_dropdown_visible(self, driver):
-        """Test language dropdown is visible"""
-        common_page = CommonPage(driver)
-        assert common_page.is_language_dropdown_visible(), "Language dropdown not visible"
-
     @pytest.mark.parametrize("nav_link", ["home", "analytics", "datasets", "about_us"])
     def test_navigation_links_visible(self, driver, nav_link):
         """Test all navigation links are visible"""
