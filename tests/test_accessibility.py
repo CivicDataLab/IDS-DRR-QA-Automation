@@ -17,11 +17,27 @@ Run:
 
 import pytest
 from axe_selenium_python import Axe
+from selenium.webdriver.support.ui import WebDriverWait
 
 from config.config import Config
 from pages.common_page import CommonPage
 
 CRITICAL_IMPACTS = ("critical", "serious")
+
+
+def _wait_for_dom_to_settle(driver, timeout=30):
+    """Wait until the page stops adding elements: the same element count on
+    four polls in a row (~1.5 s). The header logo renders long before the page
+    body, so scanning on the logo alone scanned a half-built page at random."""
+    seen = []
+
+    def settled(d):
+        seen.append(d.execute_script("return document.getElementsByTagName('*').length"))
+        return len(seen) >= 4 and len(set(seen[-4:])) == 1
+
+    WebDriverWait(driver, timeout, poll_frequency=0.5).until(
+        settled, message="The page kept changing; axe would scan a half-built DOM"
+    )
 
 
 def _scan(driver, url):
@@ -32,6 +48,7 @@ def _scan(driver, url):
     """
     driver.get(url)
     CommonPage(driver).is_header_logo_visible()
+    _wait_for_dom_to_settle(driver)
     axe = Axe(driver)
     axe.inject()
     results = axe.run()
@@ -54,7 +71,8 @@ class TestAccessibility:
     @pytest.mark.smoke
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children (critical), "
-        "aria-valid-attr-value/aria-valid-attr (critical) on Home — tracked in issue"
+        "aria-valid-attr-value/aria-valid-attr (critical) on Home — tracked in issue",
+        strict=True,
     )
     def test_home_page_accessibility(self, driver):
         """Home page has no critical/serious axe-core violations"""
@@ -63,7 +81,8 @@ class TestAccessibility:
 
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children (critical), "
-        "color-contrast (serious) on the analytics dashboard — tracked in issue"
+        "color-contrast (serious) on the analytics dashboard — tracked in issue",
+        strict=True,
     )
     def test_analytics_page_accessibility(self, driver):
         """Analytics dashboard (Assam, map view) has no critical/serious axe-core violations"""
@@ -72,7 +91,8 @@ class TestAccessibility:
 
     @pytest.mark.xfail(
         reason="Live 2026-09-09: aria-required-children, aria-valid-attr-value, label "
-        "(all critical), button-name (serious, 27 nodes) on Datasets — tracked in issue"
+        "(all critical), button-name (serious, 27 nodes) on Datasets — tracked in issue",
+        strict=True,
     )
     def test_datasets_page_accessibility(self, driver):
         """Datasets page has no critical/serious axe-core violations"""
@@ -80,7 +100,8 @@ class TestAccessibility:
         assert not critical, f"{len(critical)} critical/serious violation(s): {[v['id'] for v in critical]}"
 
     @pytest.mark.xfail(
-        reason="Live 2026-09-09: aria-required-children (critical) on Glossary — tracked in issue"
+        reason="Live 2026-09-09: aria-required-children (critical) on Glossary — tracked in issue",
+        strict=True,
     )
     def test_glossary_page_accessibility(self, driver):
         """Glossary page has no critical/serious axe-core violations"""
@@ -88,7 +109,8 @@ class TestAccessibility:
         assert not critical, f"{len(critical)} critical/serious violation(s): {[v['id'] for v in critical]}"
 
     @pytest.mark.xfail(
-        reason="Live 2026-09-09: aria-required-children (critical) on About Us — tracked in issue"
+        reason="Live 2026-09-09: aria-required-children (critical) on About Us — tracked in issue",
+        strict=True,
     )
     def test_about_us_page_accessibility(self, driver):
         """About Us page has no critical/serious axe-core violations"""
