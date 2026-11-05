@@ -10,8 +10,8 @@ class HomePageLocators:
     FIRST_ANALYTICS_LINK = (By.XPATH, "(//section[@aria-labelledby='home-analytics-heading']//a)[1]")
 
     # Carousel navigation buttons
-    CAROUSEL_NEXT = (By.XPATH, "//button[@aria-label='Next slide']")
-    CAROUSEL_PREV = (By.XPATH, "//button[@aria-label='Previous slide']")
+    CAROUSEL_NEXT = (By.XPATH, "//button[normalize-space()='Next slide']")
+    CAROUSEL_PREV = (By.XPATH, "//button[normalize-space()='Previous slide']")
 
     # Dataset catalog — any link pointing to the datasets listing
     DATASET_CATALOG_SECTION = (By.XPATH, "//section[.//a[contains(@href,'datasets')]]")
