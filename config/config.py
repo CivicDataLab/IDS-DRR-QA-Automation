@@ -45,9 +45,8 @@ class Config:
     )
 
     # The IDS-DRR Data Management (backend) GraphQL API itself — not DataSpace.
-    # This is what NEXT_PUBLIC_DATA_MANAGEMENT_LAYER_URL points the frontend at,
-    # and it exposes each state's resolved resource_id via getStates (see
-    # IDS_DRR_BACKEND_GRAPHQL_URL-dependent tests in test_state_resource_ids.py).
+    # This is what NEXT_PUBLIC_DATA_MANAGEMENT_LAYER_URL points the frontend at;
+    # its getStates query exposes each state's resource_id and modules list.
     IDS_DRR_BACKEND_GRAPHQL_URL = os.getenv(
         'IDS_DRR_BACKEND_GRAPHQL_URL', 'https://hp.drr.backend.open-contracting.in/graphql'
     )
