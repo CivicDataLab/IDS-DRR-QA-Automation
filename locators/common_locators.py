@@ -17,8 +17,6 @@ class HeaderLocators:
     # Logo — alt text is "IDS-DRR home" (not "IDS-DRR Logo")
     HEADER_LOGO = (By.XPATH, "//header//img[@alt='IDS-DRR home']")
 
-    # Language dropdown
-
     # Mobile hamburger toggle — nav links (Home/Analytics/...) aren't in the DOM
     # as visible elements below the tablet breakpoint until this is clicked;
     # confirmed live 2026-09-09 at 375x667.
